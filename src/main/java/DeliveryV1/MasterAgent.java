@@ -94,8 +94,8 @@ public class MasterAgent extends Agent {
         double xval = a[0] - b[0];
         double yval = a[1] - b[1];
         double distance = Math.sqrt(xval * xval  + yval * yval);
-        //Distance values are rounded to integers//
-        return (int) Math.round(distance);
+
+        return (int) Math.round(distance); //Distance values are rounded to integers
     }
 }
 
