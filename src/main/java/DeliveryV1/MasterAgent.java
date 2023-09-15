@@ -32,12 +32,20 @@ public class MasterAgent extends Agent {
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
         ProcessData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
         RequestPerformer performer = new RequestPerformer();
-        performer.action();
+
+        addBehaviour(new TickerBehaviour(this, 2000) {
+            @Override
+            protected void onTick() {
+                //ThisIsFucked.addBehaviour(new RequestPerformer());
+                performer.action();
+            }
+        });
     }
     private class RequestPerformer extends Behaviour { //Need to turn this into a cyclic behaviour
         private int step = 0;
         public void action()
         {
+            System.out.println(getAID().getName() + " is at step " + step);
             switch (step) {
                 case 0:
                     AMSAgentDescription agents[] = null;
@@ -67,6 +75,11 @@ public class MasterAgent extends Agent {
                         }
                     }
                     //E
+
+                    step = 1;
+                    break;
+                case 1:
+                    //System.out.println("&&&&&");
                     Capacities = new int[Agents.length];
                     int i = 0;
                     for (AID agent : Agents) {
@@ -90,13 +103,22 @@ public class MasterAgent extends Agent {
                             System.out.println("No reply received");
                         }
                     }
-                    step = 1;
+                    step = 2;
                     break;
             }
         }
         public boolean done()
         {
             return step == 2;
+        }
+
+    }
+
+    private class CalculateRoutes extends OneShotBehaviour
+    {
+        public void action()
+        {
+
         }
     }
 
