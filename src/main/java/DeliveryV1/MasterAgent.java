@@ -40,11 +40,17 @@ public class MasterAgent extends Agent {
         Scanner scanner = new Scanner(System.in);
         TotalDrivers = scanner.nextInt();
         ProcessData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
-        addBehaviour(new TickerBehaviour(this, 1000)
+        addBehaviour(new TickerBehaviour(this, 5000)
         {
             protected void onTick()
             {
                 ThisIsFucked.addBehaviour(new RequestPerformer());
+                if (Agents != null)
+                {
+                    if (step == 0 && Agents.length != TotalDrivers) {
+                        System.out.println("Still requiring " + (TotalDrivers - Agents.length) + " drivers. Please add more agents in JADE");
+                    }
+                }
             }
         });
     }
@@ -73,7 +79,8 @@ public class MasterAgent extends Agent {
                     Agents = new AID[agents.length - 4];
                     int j = 0;
                     // This stores only the agents named "delivery....." so name delivery agents e.g delivery1"
-                    for (AMSAgentDescription amsAgentDescription : agents) {
+                    for (AMSAgentDescription amsAgentDescription : agents)
+                    {
                         AID agentID = amsAgentDescription.getName();
                         if (agentID.getName().contains("delivery")) {
                             Agents[j] = amsAgentDescription.getName();
@@ -112,15 +119,20 @@ public class MasterAgent extends Agent {
                     if (i == Capacities.length)
                     {
                         step = 2;
-                        System.out.println("Recieved Capacities: ");
-                        for (int capacity : Capacities)
+                        i = 0;
+                        while (i < Capacities.length)
                         {
-                            System.out.println(capacity);
+                            System.out.println(Agents[i].getLocalName() + " capacity: " + Capacities[i]);
+                            i++;
                         }
                     }
                     break;
                 case 2:
+                    //Calculating Routes//
                     break;
+
+                case 3:
+                    //Send route to delivery driver
             }
         }
         public boolean done()
