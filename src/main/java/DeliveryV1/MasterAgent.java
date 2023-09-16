@@ -19,25 +19,39 @@ import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
 public class MasterAgent extends Agent {
+
+    private int TotalDrivers;
     private int[][] Distances; //Distances[x][y] corresponds to the distance between package x and y
     private int[][] Coordinates; //Coordinates[1] refers to a coordinate array for package1: [x,y]
     private int TotalPackages; //The total number of packages
     private AID[] Agents;
     private int[] Capacities;
+
+    private int step;
     private MasterAgent ThisIsFucked;
 
     protected void setup()
     {
+        step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
+        //Stores number of drivers to know when all delivery agents have been added
+        System.out.println("Enter the total number of delivery drivers available");
+        Scanner scanner = new Scanner(System.in);
+        TotalDrivers = scanner.nextInt();
         ProcessData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
-        RequestPerformer performer = new RequestPerformer();
-        performer.action();
+        addBehaviour(new TickerBehaviour(this, 1000)
+        {
+            protected void onTick()
+            {
+                ThisIsFucked.addBehaviour(new RequestPerformer());
+            }
+        });
     }
     private class RequestPerformer extends Behaviour { //Need to turn this into a cyclic behaviour
-        private int step = 0;
         public void action()
         {
+
             switch (step) {
                 case 0:
                     AMSAgentDescription agents[] = null;
@@ -66,7 +80,12 @@ public class MasterAgent extends Agent {
                             j += 1;
                         }
                     }
-                    //E
+                    if (Agents.length == TotalDrivers)
+                    {
+                        step = 1;
+                    }
+                    break;
+                case 1:
                     Capacities = new int[Agents.length];
                     int i = 0;
                     for (AID agent : Agents) {
@@ -83,14 +102,24 @@ public class MasterAgent extends Agent {
                         {
                             String content = msg.getContent();
                             Capacities[i] = Integer.parseInt(content);
-                            System.out.println("Received Capacity: " + content);
+                            i += 1;
                         }
                         else
                         {
                             System.out.println("No reply received");
                         }
                     }
-                    step = 1;
+                    if (i == Capacities.length)
+                    {
+                        step = 2;
+                        System.out.println("Recieved Capacities: ");
+                        for (int capacity : Capacities)
+                        {
+                            System.out.println(capacity);
+                        }
+                    }
+                    break;
+                case 2:
                     break;
             }
         }
