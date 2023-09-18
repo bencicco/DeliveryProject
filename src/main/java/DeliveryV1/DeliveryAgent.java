@@ -23,11 +23,11 @@ public class DeliveryAgent extends Agent {
                 if (request != null)
                 {
                     String content = request.getContent();
-                    if ("Give me your ID".equals(content))
+                    if ("Are you a delivery Agent?".equals(content))
                     {
                         ACLMessage reply = request.createReply();
-                        reply.setPerformative(ACLMessage.INFORM);
-                        reply.setContent(getAID().toString()); // Send the agent's AID
+                        reply.setPerformative(ACLMessage.CONFIRM);
+                        reply.setContent("yes"); // Send the agent's AID
                         send(reply);
                     }
                     else if("Give me your Capacity".equals(content))
@@ -37,6 +37,7 @@ public class DeliveryAgent extends Agent {
                         reply.setContent(String.valueOf(Capacity));
                         send(reply);
                     }
+
                 }
                 else
                 {

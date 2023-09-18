@@ -4,6 +4,7 @@ import jade.core.AID;
 import jade.core.Agent;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.Objects;
 import java.util.Scanner;
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.OneShotBehaviour;
@@ -40,7 +41,7 @@ public class MasterAgent extends Agent {
         Scanner scanner = new Scanner(System.in);
         TotalDrivers = scanner.nextInt();
         ProcessData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
-        addBehaviour(new TickerBehaviour(this, 5000)
+        addBehaviour(new TickerBehaviour(this, 10000)
         {
             protected void onTick()
             {
@@ -77,24 +78,57 @@ public class MasterAgent extends Agent {
                     }
                     // We only want the delivery agents, #delivery agents = #agents - 4 (3 default agents + MA agent)
                     Agents = new AID[agents.length - 4];
-                    int j = 0;
+                    int i = 0;
                     // This stores only the agents named "delivery....." so name delivery agents e.g delivery1"
-                    for (AMSAgentDescription amsAgentDescription : agents)
+                    for (AMSAgentDescription agent : agents)
                     {
-                        AID agentID = amsAgentDescription.getName();
-                        if (agentID.getName().contains("delivery")) {
-                            Agents[j] = amsAgentDescription.getName();
-                            j += 1;
+                        // Creating an INFORM request
+                        System.out.println("Sending a message to: " + agent.getName());
+                        ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                        AID aid = agent.getName();
+                        msg.addReceiver(aid);
+                        msg.setContent("Are you a delivery Agent?");
+                        send(msg);
+                        try {
+                            // Agent waits for 2 seconds
+                            Thread.sleep(1000); // 2 seconds
+                        } catch (InterruptedException e) {
+                            // Handle any exceptions if needed
+                            e.printStackTrace();
+                        }
+                        //Agent waits 2 seconds for other agent to send reply
+                        final MessageTemplate msgTemplate  = MessageTemplate.MatchPerformative(ACLMessage.CONFIRM);
+                        //Agent waits 2 seconds for other agent to send reply
+                        final ACLMessage reply = this.myAgent.receive(msgTemplate);
+                        if (reply != null)
+                        {
+                            String content = reply.getContent();
+                            if (Objects.equals(content, "yes"))
+                            {
+                                System.out.println(reply.getSender().getName());
+                                System.out.println("Replied!");
+                                Agents[i] = reply.getSender();
+                                i += 1;
+                            }
                         }
                     }
-                    if (Agents.length == TotalDrivers)
+                    if (Agents[Agents.length - 1] != null)
                     {
+                        System.out.println("Found Agents: ");
+                        for (AID agent : Agents)
+                        {
+                            System.out.println(agent.getLocalName());
+                        }
                         step = 1;
+                    }
+                    else
+                    {
+                        System.out.println("Could not find all Agents!");
                     }
                     break;
                 case 1:
                     Capacities = new int[Agents.length];
-                    int i = 0;
+                    i = 0;
                     for (AID agent : Agents) {
                         // Creating an INFORM request
                         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
@@ -108,8 +142,11 @@ public class MasterAgent extends Agent {
                         if (msg != null)
                         {
                             String content = msg.getContent();
-                            Capacities[i] = Integer.parseInt(content);
-                            i += 1;
+                            if(!Objects.equals(content, "yes"))
+                            {
+                                Capacities[i] = Integer.parseInt(content);
+                                i += 1;
+                            }
                         }
                         else
                         {
