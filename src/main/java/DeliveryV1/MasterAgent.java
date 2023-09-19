@@ -19,6 +19,8 @@ import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
+import javax.swing.*;
+
 public class MasterAgent extends Agent {
 
     private int TotalDrivers;
@@ -27,6 +29,7 @@ public class MasterAgent extends Agent {
     private int TotalPackages; //The total number of packages
     private AID[] Agents;
     private int[] Capacities;
+    private int[][] Routes;
 
     private int step;
     private MasterAgent ThisIsFucked;
@@ -41,6 +44,15 @@ public class MasterAgent extends Agent {
         Scanner scanner = new Scanner(System.in);
         TotalDrivers = scanner.nextInt();
         ProcessData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
+        System.out.println(Coordinates[0][1] + "and " + Coordinates[1][1]);
+        SwingUtilities.invokeLater(() -> {
+            JFrame frame = new JFrame("Coordinate Visualizer");
+            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            frame.add(new CoordinateVisualizer(Coordinates)); // Pass your Coordinates[][] array
+            frame.setSize(800, 600);
+            frame.setLocationRelativeTo(null);
+            frame.setVisible(true);
+        });
         addBehaviour(new TickerBehaviour(this, 10000)
         {
             protected void onTick()
@@ -55,6 +67,7 @@ public class MasterAgent extends Agent {
             }
         });
     }
+
     private class RequestPerformer extends Behaviour { //Need to turn this into a cyclic behaviour
         public void action()
         {
@@ -83,15 +96,15 @@ public class MasterAgent extends Agent {
                     for (AMSAgentDescription agent : agents)
                     {
                         // Creating an INFORM request
-                        System.out.println("Sending a message to: " + agent.getName());
+                        System.out.println("Sending a message to: " + agent.getName().getLocalName());
                         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
                         AID aid = agent.getName();
                         msg.addReceiver(aid);
                         msg.setContent("Are you a delivery Agent?");
                         send(msg);
                         try {
-                            // Agent waits for 2 seconds
-                            Thread.sleep(1000); // 2 seconds
+                            // Agent waits for 1 seconds
+                            Thread.sleep(1000);
                         } catch (InterruptedException e) {
                             // Handle any exceptions if needed
                             e.printStackTrace();
@@ -112,7 +125,7 @@ public class MasterAgent extends Agent {
                             }
                         }
                     }
-                    if (Agents[Agents.length - 1] != null)
+                    if (Agents.length == TotalDrivers)
                     {
                         System.out.println("Found Agents: ");
                         for (AID agent : Agents)
@@ -208,7 +221,7 @@ public class MasterAgent extends Agent {
             if (values.length == 2) // Ensure there are two values before trying to parse
             {
                 Coordinates[i][0] = Integer.parseInt(values[0].trim()); // Parse and store the values
-                Coordinates[i][1] = Integer.parseInt(values[0].trim());
+                Coordinates[i][1] = Integer.parseInt(values[1].trim());
                 i += 1;
             }
         }
@@ -241,14 +254,3 @@ public class MasterAgent extends Agent {
         return (int) Math.round(distance); //Distance values are rounded to integers
     }
 }
-
-
-
-
-
-
-
-
-
-
-

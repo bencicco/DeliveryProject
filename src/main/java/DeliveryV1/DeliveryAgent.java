@@ -7,7 +7,6 @@ import jade.lang.acl.ACLMessage;
 public class DeliveryAgent extends Agent {
     private int Capacity;
     private int MaxDistance;
-    private int[] Details;
     private DeliveryAgentGUI GUI;
     protected void setup() {
         // Create and show the GUI
