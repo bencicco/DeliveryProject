@@ -36,6 +36,11 @@ public class MasterAgent extends Agent {
 
     protected void setup()
     {
+        Routes = new int[][]
+                {{3, 1}, {4,2}};
+                // Route 1: Start at coordinate 3, then go to coordinate 1
+                // Add more routes as needed;
+
         step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
@@ -48,7 +53,7 @@ public class MasterAgent extends Agent {
         SwingUtilities.invokeLater(() -> {
             JFrame frame = new JFrame("Coordinate Visualizer");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.add(new CoordinateVisualizer(Coordinates)); // Pass your Coordinates[][] array
+            frame.add(new CoordinateVisualizer(Coordinates, Routes)); // Pass your Coordinates[][] array
             frame.setSize(800, 600);
             frame.setLocationRelativeTo(null);
             frame.setVisible(true);
@@ -74,6 +79,7 @@ public class MasterAgent extends Agent {
 
             switch (step) {
                 case 0:
+                    //Retrieves Delivery Agents
                     AMSAgentDescription agents[] = null;
                     try
                     {
@@ -140,6 +146,7 @@ public class MasterAgent extends Agent {
                     }
                     break;
                 case 1:
+                    //Retrieves Capacities
                     Capacities = new int[Agents.length];
                     i = 0;
                     for (AID agent : Agents) {
@@ -179,6 +186,7 @@ public class MasterAgent extends Agent {
                     break;
                 case 2:
                     //Calculating Routes//
+                    //Displaying Routes//
                     break;
 
                 case 3:
