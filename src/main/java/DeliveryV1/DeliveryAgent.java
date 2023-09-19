@@ -37,6 +37,14 @@ public class DeliveryAgent extends Agent {
                         send(reply);
                     }
 
+                    else if("Give me your Distance".equals(content))
+                    {
+                        ACLMessage reply = request.createReply();
+                        reply.setPerformative(ACLMessage.INFORM);
+                        reply.setContent(String.valueOf(MaxDistance));
+                        send(reply);
+                    }
+
                 }
                 else
                 {

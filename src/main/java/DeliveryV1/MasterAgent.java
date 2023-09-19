@@ -29,6 +29,7 @@ public class MasterAgent extends Agent {
     private int TotalPackages; //The total number of packages
     private AID[] Agents;
     private int[] Capacities;
+    private int[] DistanceRestraints;
     private int[][] Routes;
 
     private int step;
@@ -73,11 +74,13 @@ public class MasterAgent extends Agent {
         });
     }
 
-    private class RequestPerformer extends Behaviour { //Need to turn this into a cyclic behaviour
+    private class RequestPerformer extends Behaviour
+    {
         public void action()
         {
 
-            switch (step) {
+            switch (step)
+            {
                 case 0:
                     //Retrieves Delivery Agents
                     AMSAgentDescription agents[] = null;
@@ -185,17 +188,55 @@ public class MasterAgent extends Agent {
                     }
                     break;
                 case 2:
-                    //Calculating Routes//
-                    //Displaying Routes//
+                    DistanceRestraints = new int[Agents.length];
+                    i = 0;
+                    for (AID agent : Agents) {
+                        // Creating an INFORM request
+                        ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                        msg.addReceiver(agent);
+                        msg.setContent("Give me your Distance");
+                        send(msg);
+
+                        // Template to receive the reply
+                        MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+                        msg = blockingReceive(mt);
+                        if (msg != null)
+                        {
+                            String content = msg.getContent();
+                            if(!Objects.equals(content, "yes"))
+                            {
+                                DistanceRestraints[i] = Integer.parseInt(content);
+                                i += 1;
+                            }
+                        }
+                        else
+                        {
+                            System.out.println("No reply received");
+                        }
+                    }
+                    if (i == DistanceRestraints.length)
+                    {
+                        step = 3;
+                        i = 0;
+                        while (i < DistanceRestraints.length)
+                        {
+                            System.out.println(Agents[i].getLocalName() + " distance constraint: " + DistanceRestraints[i]);
+                            i++;
+                        }
+                    }
+                    //Recieve Distance Constraints
                     break;
 
                 case 3:
+                    //Calculating Routes//
+                    //Displaying Routes//
                     //Send route to delivery driver
+                    break;
             }
         }
         public boolean done()
         {
-            return step == 2;
+            return step == 3;
         }
     }
 
