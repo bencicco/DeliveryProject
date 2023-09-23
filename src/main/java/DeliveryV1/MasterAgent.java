@@ -4,8 +4,8 @@ import jade.core.AID;
 import jade.core.Agent;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Objects;
-import java.util.Scanner;
+import java.util.*;
+
 import jade.core.behaviours.Behaviour;
 import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
@@ -23,6 +23,7 @@ import javax.swing.*;
 
 public class MasterAgent extends Agent {
 
+    private List<RouteGroup> population;
     private int TotalDrivers;
     private int[][] Distances; //Distances[x][y] corresponds to the distance between package x and y
     private int[][] Coordinates; //Coordinates[1] refers to a coordinate array for package1: [x,y]
@@ -37,11 +38,7 @@ public class MasterAgent extends Agent {
 
     protected void setup()
     {
-        Routes = new int[][]
-                {{3, 1}, {4,2}};
-                // Route 1: Start at coordinate 3, then go to coordinate 1
-                // Add more routes as needed;
-
+//        population = generateInitialPopulation();
         step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
@@ -49,16 +46,17 @@ public class MasterAgent extends Agent {
         System.out.println("Enter the total number of delivery drivers available");
         Scanner scanner = new Scanner(System.in);
         TotalDrivers = scanner.nextInt();
-        ProcessData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
+        processData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
         System.out.println(Coordinates[0][1] + "and " + Coordinates[1][1]);
-        SwingUtilities.invokeLater(() -> {
-            JFrame frame = new JFrame("Coordinate Visualizer");
-            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            frame.add(new CoordinateVisualizer(Coordinates, Routes)); // Pass your Coordinates[][] array
-            frame.setSize(800, 600);
-            frame.setLocationRelativeTo(null);
-            frame.setVisible(true);
-        });
+//        SwingUtilities.invokeLater(() ->
+//        {
+//            JFrame frame = new JFrame("Coordinate Visualizer");
+//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//            frame.add(new CoordinateVisualizer(Coordinates, Routes)); // Pass your Coordinates[][] array
+//            frame.setSize(800, 600);
+//            frame.setLocationRelativeTo(null);
+//            frame.setVisible(true);
+//        });
         addBehaviour(new TickerBehaviour(this, 10000)
         {
             protected void onTick()
@@ -240,14 +238,88 @@ public class MasterAgent extends Agent {
         }
     }
 
+    private RouteGroup tournamentSelection(List<RouteGroup> population, int tournamentSize) {
+        List<RouteGroup> tournament = new ArrayList<>();
+        for (int i = 0; i < tournamentSize; i++)
+        {
+            int randomIndex = (int) (Math.random() * population.size());
+            tournament.add(population.get(randomIndex));
+        }
+        return Collections.min(tournament, Comparator.comparing(RouteGroup::GetTotalDistance));
+    }
 
+    // Crossover: Implement a simple ordered crossover
+//    private RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2) {
+//        int[][] ChildRoutes = new int[parent1.Group.length][];
+//        int i = 0;
+//        while(i < parent1.Group.length)
+//        {
+//            ChildRoutes[i] = new int[parent1.Group[i].getOrder().length];
+//        }
+//        int startRoute = (int) (Math.random() * parent1.Group.length);
+//        int endRoute = (int) (Math.random() * parent1.Group.length);
+//
+//        for (int i = 0; i < childOrder.length; i++) {
+//            if (startPos < endPos && i >= startPos && i <= endPos) {
+//                childOrder[i] = parent1.getOrder()[i];
+//            } else if (startPos > endPos && (i <= startPos && i >= endPos)) {
+//                childOrder[i] = parent1.getOrder()[i];
+//            } else {
+//                childOrder[i] = -1;
+//            }
+//        }
+//
+//        for (int i = 0; i < parent2.getOrder().length; i++) {
+//            if (!contains(childOrder, parent2.getOrder()[i])) {
+//                for (int j = 0; j < childOrder.length; j++) {
+//                    if (childOrder[j] == -1) {
+//                        childOrder[j] = parent2.getOrder()[i];
+//                        break;
+//                    }
+//                }
+//            }
+//        }
+//
+//        return new Route(childOrder, 0); // The total distance will be calculated later
+//    }
+//
+//    // Mutation: Implement a simple swap mutation
+//    private void swapMutation(Route route) {
+//        int[] order = route.getOrder();
+//        int pos1 = (int) (Math.random() * order.length);
+//        int pos2 = (int) (Math.random() * order.length);
+//        int temp = order[pos1];
+//        order[pos1] = order[pos2];
+//        order[pos2] = temp;
+//    }
+//
+//    private List<Route> selectRoutesForReproduction(List<Route> population, int tournamentSize, int numParents) {
+//        List<Route> parents = new ArrayList<>();
+//        for (int i = 0; i < numParents; i++) {
+//            Route parent = tournamentSelection(population, tournamentSize);
+//            parents.add(parent);
+//        }
+//        return parents;
+//    }
+//
+//    private List<Route> crossoverAndMutate(List<Route> parents) {
+//        List<Route> offspring = new ArrayList<>();
+//        while (offspring.size() < population.size()) {
+//            Route parent1 = parents.get((int) (Math.random() * parents.size()));
+//            Route parent2 = parents.get((int) (Math.random() * parents.size()));
+//            Route child = orderedCrossover(parent1, parent2);
+//            swapMutation(child);
+//            offspring.add(child);
+//        }
+//        return offspring;
+//    }
 
-    private void ProcessData()
+    private void processData()
     {
         try
         {
-            ReadFile(); //Reads data entry from text file (test.txt) and adds to Coordinates
-            UpdateDistanceArray(); //Uses Coordinates to instantiate Distances
+            readFile(); //Reads data entry from text file (test.txt) and adds to Coordinates
+            updateDistanceArray(); //Uses Coordinates to instantiate Distances
 
         }
         catch (FileNotFoundException e)
@@ -257,7 +329,7 @@ public class MasterAgent extends Agent {
     }
 
 
-    private void ReadFile() throws FileNotFoundException {
+    private void readFile() throws FileNotFoundException {
         File file = new File("test.txt");
         Scanner scanner = new Scanner(file);
         TotalPackages = scanner.nextInt();  //First line of text file = total number of packages
@@ -277,7 +349,7 @@ public class MasterAgent extends Agent {
 
     }
 
-    private void UpdateDistanceArray()
+    private void updateDistanceArray()
     {
         Distances = new int[TotalPackages][TotalPackages];
         for(int i = 0; i <  TotalPackages; i++)
@@ -290,16 +362,25 @@ public class MasterAgent extends Agent {
                 }
                 else
                 {
-                    Distances[i][j] = DistanceCalculator(Coordinates[i], Coordinates[j]);
+                    Distances[i][j] = distanceCalculator(Coordinates[i], Coordinates[j]);
                 }
             }
         }
     }
-    private static int DistanceCalculator(int[] a, int[] b)
+    private static int distanceCalculator(int[] a, int[] b)
     {
         double xval = a[0] - b[0];
         double yval = a[1] - b[1];
         double distance = Math.sqrt(xval * xval  + yval * yval);
         return (int) Math.round(distance); //Distance values are rounded to integers
+    }
+
+    private boolean contains(int[] array, int element) {
+        for (int value : array) {
+            if (value == element) {
+                return true;
+            }
+        }
+        return false;
     }
 }
