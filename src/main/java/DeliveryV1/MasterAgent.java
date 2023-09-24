@@ -1,45 +1,79 @@
 package DeliveryV1;
-
 import jade.core.AID;
 import jade.core.Agent;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Scanner;
+import java.util.*;
 import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.AMSService;
-import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.AMSAgentDescription;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
+import javax.swing.*;
+
 public class MasterAgent extends Agent {
+
+    private List<RouteGroup> population;
+    private int TotalDrivers;
     private int[][] Distances; //Distances[x][y] corresponds to the distance between package x and y
     private int[][] Coordinates; //Coordinates[1] refers to a coordinate array for package1: [x,y]
     private int TotalPackages; //The total number of packages
     private AID[] Agents;
     private int[] Capacities;
+    private int[] DistanceRestraints;
+    private int[][] Routes;
+
+    private int step;
     private MasterAgent ThisIsFucked;
 
     protected void setup()
     {
+//
+//      population = generateInitialPopulation();
+        step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
-        ProcessData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
-        RequestPerformer performer = new RequestPerformer();
-        performer.action();
+        //Stores number of drivers to know when all delivery agents have been added
+        System.out.println("Enter the total number of delivery drivers available");
+        Scanner scanner = new Scanner(System.in);
+        TotalDrivers = scanner.nextInt();
+        processData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
+//        SwingUtilities.invokeLater(() ->
+//        {
+//            JFrame frame = new JFrame("Coordinate Visualizer");
+//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+//            frame.add(new CoordinateVisualizer(Coordinates, Routes)); // Pass your Coordinates[][] array
+//            frame.setSize(800, 600);
+//            frame.setLocationRelativeTo(null);
+//            frame.setVisible(true);
+//        });
+        addBehaviour(new TickerBehaviour(this, 10000)
+        {
+            protected void onTick()
+            {
+                ThisIsFucked.addBehaviour(new RequestPerformer());
+                if (Agents != null)
+                {
+                    if (step == 0 && Agents.length != TotalDrivers) {
+                        System.out.println("Still requiring " + (TotalDrivers - Agents.length) + " drivers. Please add more agents in JADE");
+                    }
+                }
+            }
+        });
     }
-    private class RequestPerformer extends Behaviour { //Need to turn this into a cyclic behaviour
-        private int step = 0;
+
+    private class RequestPerformer extends Behaviour
+    {
         public void action()
         {
-            switch (step) {
+
+            switch (step)
+            {
                 case 0:
+                    //Retrieves Delivery Agents
                     AMSAgentDescription agents[] = null;
                     try
                     {
@@ -57,18 +91,58 @@ public class MasterAgent extends Agent {
                     }
                     // We only want the delivery agents, #delivery agents = #agents - 4 (3 default agents + MA agent)
                     Agents = new AID[agents.length - 4];
-                    int j = 0;
+                    int i = 0;
                     // This stores only the agents named "delivery....." so name delivery agents e.g delivery1"
-                    for (AMSAgentDescription amsAgentDescription : agents) {
-                        AID agentID = amsAgentDescription.getName();
-                        if (agentID.getName().contains("delivery")) {
-                            Agents[j] = amsAgentDescription.getName();
-                            j += 1;
+                    for (AMSAgentDescription agent : agents)
+                    {
+                        // Creating an INFORM request
+                        System.out.println("Sending a message to: " + agent.getName().getLocalName());
+                        ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                        AID aid = agent.getName();
+                        msg.addReceiver(aid);
+                        msg.setContent("Are you a delivery Agent?");
+                        send(msg);
+                        try {
+                            // Agent waits for 1 seconds
+                            Thread.sleep(1000);
+                        } catch (InterruptedException e) {
+                            // Handle any exceptions if needed
+                            e.printStackTrace();
+                        }
+                        //Agent waits 2 seconds for other agent to send reply
+                        final MessageTemplate msgTemplate  = MessageTemplate.MatchPerformative(ACLMessage.CONFIRM);
+                        //Agent waits 2 seconds for other agent to send reply
+                        final ACLMessage reply = this.myAgent.receive(msgTemplate);
+                        if (reply != null)
+                        {
+                            String content = reply.getContent();
+                            if (Objects.equals(content, "yes"))
+                            {
+                                System.out.println(reply.getSender().getName());
+                                System.out.println("Replied!");
+                                Agents[i] = reply.getSender();
+                                i += 1;
+                            }
                         }
                     }
-                    //E
+                    if (Agents.length == TotalDrivers)
+                    {
+                        System.out.println("Found Agents: ");
+                        for (AID agent : Agents)
+                        {
+                            System.out.println(agent.getLocalName());
+                        }
+                        step = 1;
+                    }
+                    else
+                    {
+                        System.out.println("Could not find all Agents!");
+                    }
+                    break;
+                case 1:
+                    //Retrieves Capacities
                     Capacities = new int[Agents.length];
-                    int i = 0;
+                    i = 0;
                     for (AID agent : Agents) {
                         // Creating an INFORM request
                         ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
@@ -82,32 +156,175 @@ public class MasterAgent extends Agent {
                         if (msg != null)
                         {
                             String content = msg.getContent();
-                            Capacities[i] = Integer.parseInt(content);
-                            System.out.println("Received Capacity: " + content);
+                            if(!Objects.equals(content, "yes"))
+                            {
+                                Capacities[i] = Integer.parseInt(content);
+                                i += 1;
+                            }
                         }
                         else
                         {
                             System.out.println("No reply received");
                         }
                     }
-                    step = 1;
+                    if (i == Capacities.length)
+                    {
+                        step = 2;
+                        i = 0;
+                        while (i < Capacities.length)
+                        {
+                            System.out.println(Agents[i].getLocalName() + " capacity: " + Capacities[i]);
+                            i++;
+                        }
+                    }
+                    break;
+                case 2:
+                    DistanceRestraints = new int[Agents.length];
+                    i = 0;
+                    for (AID agent : Agents) {
+                        // Creating an INFORM request
+                        ACLMessage msg = new ACLMessage(ACLMessage.REQUEST);
+                        msg.addReceiver(agent);
+                        msg.setContent("Give me your Distance");
+                        send(msg);
+
+                        // Template to receive the reply
+                        MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+                        msg = blockingReceive(mt);
+                        if (msg != null)
+                        {
+                            String content = msg.getContent();
+                            if(!Objects.equals(content, "yes"))
+                            {
+                                DistanceRestraints[i] = Integer.parseInt(content);
+                                i += 1;
+                            }
+                        }
+                        else
+                        {
+                            System.out.println("No reply received");
+                        }
+                    }
+                    if (i == DistanceRestraints.length)
+                    {
+                        step = 3;
+                        i = 0;
+                        while (i < DistanceRestraints.length)
+                        {
+                            System.out.println(Agents[i].getLocalName() + " distance constraint: " + DistanceRestraints[i]);
+                            i++;
+                        }
+                    }
+                    //Recieve Distance Constraints
+                    break;
+
+                case 3:
+                    //Calculating Routes//
+                    //Displaying Routes//
+                    //Send route to delivery driver
                     break;
             }
         }
         public boolean done()
         {
-            return step == 2;
+            return step == 3;
         }
     }
 
+    //This isn't functional or tested, just an idea//
+    private RouteGroup tournamentSelection(List<RouteGroup> population, int tournamentSize)
+    {
+        List<RouteGroup> tournament = new ArrayList<>();
+        for (int i = 0; i < tournamentSize; i++)
+        {
+            int randomIndex = (int) (Math.random() * population.size());
+            tournament.add(population.get(randomIndex));
+        }
+        return Collections.min(tournament, Comparator.comparing(RouteGroup::GetTotalDistance));
+    }
+
+    // This is working! Creates a child from two parent route groups.
+    private RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2)
+    {
+        RouteGroup Child = new RouteGroup(parent1.Group.length);
+        int i = 0;
+        while (i < parent1.Group.length)
+        {
+            // Initiate length of each route
+            Child.Group[i] = new Route(new int[parent1.Group[i].getOrder().length], 0);
+            i++;
+        }
+        i = 0;
+        while (i < parent1.Group.length)
+        {
+            // Choose a package to start the inhertiance from parent1
+            int startPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
+            // Choose a package to end the inheritance from parent1
+            int endPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
+            // Keep generating new end package until it is less than start package
+            while (endPackage < startPackage)
+            {
+                endPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
+            }
+            int j = 0;
+            while (j < parent1.Group[i].getOrder().length)
+            {
+                //Starting from the start of the child route, if the index is outside of the start and end package, inherit from package from parent 2
+                if (j < startPackage || j > endPackage)
+                {
+                    Child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
+                }
+                if (j >= startPackage && j <= endPackage)
+                {
+                    // If index is within start and end package inherit from parent 1.
+                    Child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
+                }
+                j++;
+            }
+            i++;
+        }
+        return Child;
+    }
 
 
-    private void ProcessData()
+//
+//    // Mutation: Implement a simple swap mutation
+//    private void swapMutation(Route route) {
+//        int[] order = route.getOrder();
+//        int pos1 = (int) (Math.random() * order.length);
+//        int pos2 = (int) (Math.random() * order.length);
+//        int temp = order[pos1];
+//        order[pos1] = order[pos2];
+//        order[pos2] = temp;
+//    }
+//
+//    private List<Route> selectRoutesForReproduction(List<Route> population, int tournamentSize, int numParents) {
+//        List<Route> parents = new ArrayList<>();
+//        for (int i = 0; i < numParents; i++) {
+//            Route parent = tournamentSelection(population, tournamentSize);
+//            parents.add(parent);
+//        }
+//        return parents;
+//    }
+//
+//    private List<Route> crossoverAndMutate(List<Route> parents) {
+//        List<Route> offspring = new ArrayList<>();
+//        while (offspring.size() < population.size()) {
+//            Route parent1 = parents.get((int) (Math.random() * parents.size()));
+//            Route parent2 = parents.get((int) (Math.random() * parents.size()));
+//            Route child = orderedCrossover(parent1, parent2);
+//            swapMutation(child);
+//            offspring.add(child);
+//        }
+//        return offspring;
+//    }
+
+    private void processData()
     {
         try
         {
-            ReadFile(); //Reads data entry from text file (test.txt) and adds to Coordinates
-            UpdateDistanceArray(); //Uses Coordinates to instantiate Distances
+            readFile(); //Reads data entry from text file (test.txt) and adds to Coordinates
+            updateDistanceArray(); //Uses Coordinates to instantiate Distances
 
         }
         catch (FileNotFoundException e)
@@ -117,7 +334,8 @@ public class MasterAgent extends Agent {
     }
 
 
-    private void ReadFile() throws FileNotFoundException {
+    private void readFile() throws FileNotFoundException
+    {
         File file = new File("test.txt");
         Scanner scanner = new Scanner(file);
         TotalPackages = scanner.nextInt();  //First line of text file = total number of packages
@@ -130,14 +348,14 @@ public class MasterAgent extends Agent {
             if (values.length == 2) // Ensure there are two values before trying to parse
             {
                 Coordinates[i][0] = Integer.parseInt(values[0].trim()); // Parse and store the values
-                Coordinates[i][1] = Integer.parseInt(values[0].trim());
+                Coordinates[i][1] = Integer.parseInt(values[1].trim());
                 i += 1;
             }
         }
 
     }
 
-    private void UpdateDistanceArray()
+    private void updateDistanceArray()
     {
         Distances = new int[TotalPackages][TotalPackages];
         for(int i = 0; i <  TotalPackages; i++)
@@ -150,12 +368,12 @@ public class MasterAgent extends Agent {
                 }
                 else
                 {
-                    Distances[i][j] = DistanceCalculator(Coordinates[i], Coordinates[j]);
+                    Distances[i][j] = distanceCalculator(Coordinates[i], Coordinates[j]);
                 }
             }
         }
     }
-    private static int DistanceCalculator(int[] a, int[] b)
+    private static int distanceCalculator(int[] a, int[] b)
     {
         double xval = a[0] - b[0];
         double yval = a[1] - b[1];
@@ -163,14 +381,3 @@ public class MasterAgent extends Agent {
         return (int) Math.round(distance); //Distance values are rounded to integers
     }
 }
-
-
-
-
-
-
-
-
-
-
-
