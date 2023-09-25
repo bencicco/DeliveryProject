@@ -231,6 +231,20 @@ public class MasterAgent extends Agent {
         }
     }
 
+    private int[] evaluateFitness(RouteGroup population, int totalPackages)
+    {
+        int[] populationFitness = new int[population.Group.length];
+        int packageAverageDistance = population.GetTotalDistance() / totalPackages;
+        for (int i = 0; i < population.Group.length; i++)
+        {
+            int packagesDelivered = population.GetRoute(i).getOrder().length;
+            int totalDistance = population.GetRoute(i).getTotalDistance();
+            populationFitness[i] = packagesDelivered - (totalDistance / (totalDistance + (packageAverageDistance * totalPackages)));
+        }
+        populationFitness = normalise(populationFitness);
+        return populationFitness;
+    }
+
     //This isn't functional or tested, just an idea//
     private RouteGroup tournamentSelection(List<RouteGroup> population, int tournamentSize)
     {
@@ -379,5 +393,20 @@ public class MasterAgent extends Agent {
         double yval = a[1] - b[1];
         double distance = Math.sqrt(xval * xval  + yval * yval);
         return (int) Math.round(distance); //Distance values are rounded to integers
+    }
+
+    private static int[] normalise(int[] a)
+    {
+        int[] result = new int[a.length];
+        int[] sorted = a.clone();
+        Arrays.sort(sorted);
+
+        int minVal = sorted[0];
+        int maxVal = sorted[sorted.length - 1];
+        for (int i = 0; i < a.length; i++)
+        {
+            result[i] = (a[i] - minVal) / (maxVal - minVal);
+        }
+        return result;
     }
 }
