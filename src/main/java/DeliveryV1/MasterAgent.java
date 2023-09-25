@@ -231,10 +231,10 @@ public class MasterAgent extends Agent {
         }
     }
 
-    private int[] evaluateFitness(RouteGroup population, int totalPackages)
+    private float[] evaluateFitness(RouteGroup population, int totalPackages)
     {
-        int[] populationFitness = new int[population.Group.length];
-        int packageAverageDistance = population.GetTotalDistance() / totalPackages;
+        float[] populationFitness = new int[population.Group.length];
+        float packageAverageDistance = population.GetTotalDistance() / totalPackages;
         for (int i = 0; i < population.Group.length; i++)
         {
             int packagesDelivered = population.GetRoute(i).getOrder().length;
@@ -395,14 +395,14 @@ public class MasterAgent extends Agent {
         return (int) Math.round(distance); //Distance values are rounded to integers
     }
 
-    private static int[] normalise(int[] a)
+    private static float[] normalise(float[] a)
     {
-        int[] result = new int[a.length];
-        int[] sorted = a.clone();
+        float[] result = new float[a.length];
+        float[] sorted = a.clone();
         Arrays.sort(sorted);
 
-        int minVal = sorted[0];
-        int maxVal = sorted[sorted.length - 1];
+        float minVal = sorted[0];
+        float maxVal = sorted[sorted.length - 1];
         for (int i = 0; i < a.length; i++)
         {
             result[i] = (a[i] - minVal) / (maxVal - minVal);
