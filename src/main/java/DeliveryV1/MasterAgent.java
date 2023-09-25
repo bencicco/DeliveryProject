@@ -1,21 +1,14 @@
 package DeliveryV1;
-
 import jade.core.AID;
 import jade.core.Agent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.*;
-
 import jade.core.behaviours.Behaviour;
-import jade.core.behaviours.OneShotBehaviour;
 import jade.core.behaviours.TickerBehaviour;
 import jade.domain.AMSService;
-import jade.domain.DFService;
 import jade.domain.FIPAAgentManagement.AMSAgentDescription;
-import jade.domain.FIPAAgentManagement.DFAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
-import jade.domain.FIPAAgentManagement.ServiceDescription;
-import jade.domain.FIPAException;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
@@ -38,7 +31,8 @@ public class MasterAgent extends Agent {
 
     protected void setup()
     {
-//        population = generateInitialPopulation();
+//
+//      population = generateInitialPopulation();
         step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
@@ -47,7 +41,6 @@ public class MasterAgent extends Agent {
         Scanner scanner = new Scanner(System.in);
         TotalDrivers = scanner.nextInt();
         processData(); //Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
-        System.out.println(Coordinates[0][1] + "and " + Coordinates[1][1]);
 //        SwingUtilities.invokeLater(() ->
 //        {
 //            JFrame frame = new JFrame("Coordinate Visualizer");
@@ -238,7 +231,9 @@ public class MasterAgent extends Agent {
         }
     }
 
-    private RouteGroup tournamentSelection(List<RouteGroup> population, int tournamentSize) {
+    //This isn't functional or tested, just an idea//
+    private RouteGroup tournamentSelection(List<RouteGroup> population, int tournamentSize)
+    {
         List<RouteGroup> tournament = new ArrayList<>();
         for (int i = 0; i < tournamentSize; i++)
         {
@@ -248,40 +243,50 @@ public class MasterAgent extends Agent {
         return Collections.min(tournament, Comparator.comparing(RouteGroup::GetTotalDistance));
     }
 
-    // Crossover: Implement a simple ordered crossover
-//    private RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2) {
-//        int[][] ChildRoutes = new int[parent1.Group.length][];
-//        int i = 0;
-//        while(i < parent1.Group.length)
-//        {
-//            ChildRoutes[i] = new int[parent1.Group[i].getOrder().length];
-//        }
-//        int startRoute = (int) (Math.random() * parent1.Group.length);
-//        int endRoute = (int) (Math.random() * parent1.Group.length);
-//
-//        for (int i = 0; i < childOrder.length; i++) {
-//            if (startPos < endPos && i >= startPos && i <= endPos) {
-//                childOrder[i] = parent1.getOrder()[i];
-//            } else if (startPos > endPos && (i <= startPos && i >= endPos)) {
-//                childOrder[i] = parent1.getOrder()[i];
-//            } else {
-//                childOrder[i] = -1;
-//            }
-//        }
-//
-//        for (int i = 0; i < parent2.getOrder().length; i++) {
-//            if (!contains(childOrder, parent2.getOrder()[i])) {
-//                for (int j = 0; j < childOrder.length; j++) {
-//                    if (childOrder[j] == -1) {
-//                        childOrder[j] = parent2.getOrder()[i];
-//                        break;
-//                    }
-//                }
-//            }
-//        }
-//
-//        return new Route(childOrder, 0); // The total distance will be calculated later
-//    }
+    // This is working! Creates a child from two parent route groups.
+    private RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2)
+    {
+        RouteGroup Child = new RouteGroup(parent1.Group.length);
+        int i = 0;
+        while (i < parent1.Group.length)
+        {
+            // Initiate length of each route
+            Child.Group[i] = new Route(new int[parent1.Group[i].getOrder().length], 0);
+            i++;
+        }
+        i = 0;
+        while (i < parent1.Group.length)
+        {
+            // Choose a package to start the inhertiance from parent1
+            int startPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
+            // Choose a package to end the inheritance from parent1
+            int endPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
+            // Keep generating new end package until it is less than start package
+            while (endPackage < startPackage)
+            {
+                endPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
+            }
+            int j = 0;
+            while (j < parent1.Group[i].getOrder().length)
+            {
+                //Starting from the start of the child route, if the index is outside of the start and end package, inherit from package from parent 2
+                if (j < startPackage || j > endPackage)
+                {
+                    Child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
+                }
+                if (j >= startPackage && j <= endPackage)
+                {
+                    // If index is within start and end package inherit from parent 1.
+                    Child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
+                }
+                j++;
+            }
+            i++;
+        }
+        return Child;
+    }
+
+
 //
 //    // Mutation: Implement a simple swap mutation
 //    private void swapMutation(Route route) {
@@ -329,7 +334,8 @@ public class MasterAgent extends Agent {
     }
 
 
-    private void readFile() throws FileNotFoundException {
+    private void readFile() throws FileNotFoundException
+    {
         File file = new File("test.txt");
         Scanner scanner = new Scanner(file);
         TotalPackages = scanner.nextInt();  //First line of text file = total number of packages
@@ -373,14 +379,5 @@ public class MasterAgent extends Agent {
         double yval = a[1] - b[1];
         double distance = Math.sqrt(xval * xval  + yval * yval);
         return (int) Math.round(distance); //Distance values are rounded to integers
-    }
-
-    private boolean contains(int[] array, int element) {
-        for (int value : array) {
-            if (value == element) {
-                return true;
-            }
-        }
-        return false;
     }
 }

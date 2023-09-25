@@ -4,7 +4,7 @@ public class RouteGroup
 {
     private int totalDistance;
     private int GroupSize;
-    Route[] Group;
+    public Route[] Group;
 
     public RouteGroup(int groupSize)
     {
