@@ -18,6 +18,7 @@ public class MasterAgent extends Agent {
 
     private List<RouteGroup> population;
     private int TotalDrivers;
+    private int PopulationSize; //should be initialised through some process. GUI input? ive set default in setup above generateInitialPopulation
     private int[][] Distances; //Distances[x][y] corresponds to the distance between package x and y
     private int[][] Coordinates; //Coordinates[1] refers to a coordinate array for package1: [x,y]
     private int TotalPackages; //The total number of packages
@@ -26,28 +27,16 @@ public class MasterAgent extends Agent {
     private int[] DistanceRestraints;
     private int[][] Routes;
 
+
     private int step;
     private MasterAgent ThisIsFucked;
 
     protected void setup()
     {
-//
-//      population = generateInitialPopulation();
-        processData();
-        RouteGroup parent1 = new RouteGroup(1);
-        RouteGroup parent2 = new RouteGroup(1);
-        int[] order1 = new int[3];
-        order1[0] = 0;
-        order1[1] = 1;
-        order1[2] = 1;
-        Route route1 = new Route(order1, 0);
-        parent1.Group[0] = route1;
-        parent2.Group[0] = route1;
-        RouteGroup child = orderedCrossover(parent1, parent2);
-        System.out.println(child.Group[0].getOrder()[0]);
-        System.out.println(child.Group[0].getOrder()[1]);
-        System.out.println(child.Group[0].getOrder()[2]);
 
+        PopulationSize = 100;
+        population = generateInitialPopulation();
+        processData();
         step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
@@ -78,6 +67,45 @@ public class MasterAgent extends Agent {
                 }
             }
         });
+    }
+
+    private List<RouteGroup> generateInitialPopulation() //prepare for nested loops :)
+    {
+        List<RouteGroup> Population = new ArrayList<RouteGroup>();
+
+        int[] packageNums = new int[TotalPackages]; //creates an array of numbers, each referring to a package, the number in the array is used as a signifier to identify the packets co-ordinates
+        for(int i = 0; i < TotalPackages; i++){
+            packageNums[i] = i;
+        }
+
+        for(int i = 0; i < PopulationSize; i++){ //create a new RouteGroup for each value in the population size
+            RouteGroup solution = new RouteGroup(TotalDrivers); //the New initial solution That's going to be added to the overall Population
+
+            for(int j = 0; j < TotalPackages; j++){
+                Random rand = new Random();
+
+                int int_random = rand.nextInt(TotalDrivers); //Chooses random driver(route)
+                int timer = 0;
+
+                if(solution.GetRoute(int_random).getOrder().length == Capacities[int_random]){ //check if the capacity of the driver is full
+                    i-=1; //restart current iteration. Current concern is if total packages exceeds total capacity of all drivers this will be stuck in a loop
+                    continue;
+                }
+
+                int position = solution.GetRoute(int_random).getOrder().length + 1;  //This gets the current position of the driver capacity (eg if this has 4 packages it will return 5)
+
+                if (timer == 5){ //checks if it's time to input a negative package
+                    solution.GetRoute(int_random).getOrder()[position] = -1;  //assigns the negative package
+                    timer = 0;
+                    continue;
+                } else{
+                        timer++;
+                }
+                solution.GetRoute(int_random).getOrder()[position] = packageNums[j]; //assigns the chosen route(driver) a new package
+            }
+            Population.add(solution);
+        }
+        return Population;
     }
 
     private class RequestPerformer extends Behaviour
