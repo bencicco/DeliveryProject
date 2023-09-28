@@ -33,6 +33,21 @@ public class MasterAgent extends Agent {
     {
 //
 //      population = generateInitialPopulation();
+        processData();
+        RouteGroup parent1 = new RouteGroup(1);
+        RouteGroup parent2 = new RouteGroup(1);
+        int[] order1 = new int[3];
+        order1[0] = 0;
+        order1[1] = 1;
+        order1[2] = 1;
+        Route route1 = new Route(order1, 0);
+        parent1.Group[0] = route1;
+        parent2.Group[0] = route1;
+        RouteGroup child = orderedCrossover(parent1, parent2);
+        System.out.println(child.Group[0].getOrder()[0]);
+        System.out.println(child.Group[0].getOrder()[1]);
+        System.out.println(child.Group[0].getOrder()[2]);
+
         step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
@@ -247,7 +262,14 @@ public class MasterAgent extends Agent {
     private RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2)
     {
         RouteGroup Child = new RouteGroup(parent1.Group.length);
+        int[] packageConsistency = new int[Coordinates.length];
         int i = 0;
+        while (i < Coordinates.length)
+        {
+            packageConsistency[i] = i;
+            i++;
+        }
+        i = 0;
         while (i < parent1.Group.length)
         {
             // Initiate length of each route
@@ -272,12 +294,28 @@ public class MasterAgent extends Agent {
                 //Starting from the start of the child route, if the index is outside of the start and end package, inherit from package from parent 2
                 if (j < startPackage || j > endPackage)
                 {
-                    Child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
+                    if (packageConsistency[Child.Group[i].getOrder()[j]] >= 0)
+                    {
+                        Child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
+                        packageConsistency[Child.Group[i].getOrder()[j]] = -1;
+                    }
+                    else
+                    {
+                        Child.Group[i].getOrder()[j] = -1;
+                    }
                 }
+                // If index is within start and end package inherit from parent 1.
                 if (j >= startPackage && j <= endPackage)
                 {
-                    // If index is within start and end package inherit from parent 1.
-                    Child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
+                    if (packageConsistency[Child.Group[i].getOrder()[j]] >= -1)
+                    {
+                        Child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
+                        packageConsistency[Child.Group[i].getOrder()[j]] = -1;
+                    }
+                    else
+                    {
+                        Child.Group[i].getOrder()[j] = -1;
+                    }
                 }
                 j++;
             }
