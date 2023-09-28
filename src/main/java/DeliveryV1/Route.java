@@ -14,14 +14,31 @@ public class Route {
         return order;
     }
 
-    public int getTotalDistance() {
+    public int getTotalDistance()
+    {
         return totalDistance;
     }
+
+    public int getLength()
+    {
+        int length = 0;
+        for (int i : order)
+        {
+            if (i > -1)
+            {
+                length += 1;
+            }
+        }
+        return length;
+    }
+
+
 
     // Calculate the total distance of the route
     public void calculateTotalDistance(int[][] distances) {
         int distance = 0;
-        for (int i = 0; i < order.length - 1; i++) {
+        for (int i = 0; i < order.length - 1; i++)
+        {
             distance += distances[order[i]][order[i + 1]];
         }
         totalDistance = distance;

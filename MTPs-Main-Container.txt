@@ -1,1 +1,1 @@
-http://DESKTOP-72F11NV.modem:7778/acc
+http://10.0.0.35:7778/acc
