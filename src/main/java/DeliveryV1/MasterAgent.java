@@ -19,8 +19,8 @@ public class MasterAgent extends Agent {
     private List<RouteGroup> population;
     private int TotalDrivers;
     private int PopulationSize; //should be initialised through some process. GUI input? ive set default in setup above generateInitialPopulation
-    private int[][] Distances; //Distances[x][y] corresponds to the distance between package x and y
-    private int[][] Coordinates; //Coordinates[1] refers to a coordinate array for package1: [x,y]
+    public int[][] Distances; //Distances[x][y] corresponds to the distance between package x and y
+    public int[][] Coordinates; //Coordinates[1] refers to a coordinate array for package1: [x,y]
     private int TotalPackages; //The total number of packages
     private AID[] Agents;
     private int[] Capacities;
@@ -276,7 +276,7 @@ public class MasterAgent extends Agent {
 
     private float[] evaluateFitness(RouteGroup population, int totalPackages)
     {
-        float[] populationFitness = new int[population.Group.length];
+        float[] populationFitness = new float[population.Group.length];
         float packageAverageDistance = population.GetTotalDistance() / totalPackages;
         for (int i = 0; i < population.Group.length; i++)
         {
@@ -301,13 +301,14 @@ public class MasterAgent extends Agent {
     }
 
     // This is working! Creates a child from two parent route groups.
-    private RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2)
+    public RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2)
     {
         RouteGroup Child = new RouteGroup(parent1.Group.length);
         int[] packageConsistency = new int[Coordinates.length];
         int i = 0;
         while (i < Coordinates.length)
         {
+            //Used to make sure packages are not assigned twice
             packageConsistency[i] = i;
             i++;
         }
@@ -336,7 +337,7 @@ public class MasterAgent extends Agent {
                 //Starting from the start of the child route, if the index is outside of the start and end package, inherit from package from parent 2
                 if (j < startPackage || j > endPackage)
                 {
-                    if (packageConsistency[Child.Group[i].getOrder()[j]] >= 0)
+                    if (packageConsistency[Child.Group[i].getOrder()[j]] >= 0 && parent2.Group[i].getOrder()[j] != -1)
                     {
                         Child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
                         packageConsistency[Child.Group[i].getOrder()[j]] = -1;
@@ -349,7 +350,7 @@ public class MasterAgent extends Agent {
                 // If index is within start and end package inherit from parent 1.
                 if (j >= startPackage && j <= endPackage)
                 {
-                    if (packageConsistency[Child.Group[i].getOrder()[j]] >= -1)
+                    if (packageConsistency[Child.Group[i].getOrder()[j]] > -1 && parent1.Group[i].getOrder()[j] != -1)
                     {
                         Child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
                         packageConsistency[Child.Group[i].getOrder()[j]] = -1;
@@ -399,7 +400,7 @@ public class MasterAgent extends Agent {
 //        return offspring;
 //    }
 
-    private void processData()
+    public void processData()
     {
         try
         {
