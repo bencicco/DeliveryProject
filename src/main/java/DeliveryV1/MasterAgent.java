@@ -69,36 +69,83 @@ public class MasterAgent extends Agent {
         });
     }
 
-    private List<RouteGroup> generateInitialPopulation() //prepare for nested loops :)
+    private RouteGroup[] initialisePopulation()
+    {
+        RouteGroup[] population = new RouteGroup[PopulationSize];
+        // Outer loop: For each RouteGroup in the population:
+        for (int i = 0; i < population.length; i++) {
+            population[i] = new RouteGroup(TotalDrivers);
+            // Inner loop 1: For each route in the route group:
+            for (int j = 0; j < population[i].Group.length; j++) {
+                population[i].Group[j] = new Route(new int[Capacities[j]], 0);
+                // Inner loop 2: For each package in the route:
+                for (int k = 0; k < Capacities[j]; k++)
+                {
+                    // Set all packages to -1;
+                    population[i].Group[j].getOrder()[k] = -1;
+                }
+            }
+        }
+
+        for (RouteGroup solution : population) {
+            List<Integer> packages = new ArrayList<>();
+            for (int i = 0; i < TotalPackages; i++) {
+                packages.add(i);
+            }
+            Random random = new Random();
+
+            while (!packages.isEmpty()) {
+
+                // Generate a random index within the range of available packages
+                int randomIndex = random.nextInt(packages.size());
+                int randomPackage = packages.get(randomIndex);
+                int randomRoute = random.nextInt(TotalDrivers);
+                solution.Group[randomRoute].getOrder()[randomIndex] = randomPackage;
+                packages.remove(randomIndex);
+            }
+        }
+        return population;
+    }
+
+
+
+    private List<RouteGroup> generateInitialPopulation() // prepare for nested loops :)
     {
         List<RouteGroup> Population = new ArrayList<RouteGroup>();
 
-        int[] packageNums = new int[TotalPackages]; //creates an array of numbers, each referring to a package, the number in the array is used as a signifier to identify the packets co-ordinates
-        for(int i = 0; i < TotalPackages; i++){
+        int[] packageNums = new int[TotalPackages]; // creates an array of numbers, each referring to a package, the number in the array is used as a signifier to identify the packets co-ordinates
+        for(int i = 0; i < TotalPackages; i++)
+        {
             packageNums[i] = i;
         }
 
-        for(int i = 0; i < PopulationSize; i++){ //create a new RouteGroup for each value in the population size
-            RouteGroup solution = new RouteGroup(TotalDrivers); //the New initial solution That's going to be added to the overall Population
+        for(int i = 0; i < PopulationSize; i++) // create a new RouteGroup for each value in the population size
+        {
+            RouteGroup solution = new RouteGroup(TotalDrivers); // the New initial solution That's going to be added to the overall Population
 
-            for(int j = 0; j < TotalPackages; j++){
+            for(int j = 0; j < TotalPackages; j++)
+            {
                 Random rand = new Random();
 
                 int int_random = rand.nextInt(TotalDrivers); //Chooses random driver(route)
                 int timer = 0;
 
-                if(solution.GetRoute(int_random).getOrder().length == Capacities[int_random]){ //check if the capacity of the driver is full
+                if(solution.GetRoute(int_random).getOrder().length == Capacities[int_random])
+                { //check if the capacity of the driver is full
                     i-=1; //restart current iteration. Current concern is if total packages exceeds total capacity of all drivers this will be stuck in a loop
                     continue;
                 }
 
                 int position = solution.GetRoute(int_random).getOrder().length + 1;  //This gets the current position of the driver capacity (eg if this has 4 packages it will return 5)
 
-                if (timer == 5){ //checks if it's time to input a negative package
+                if (timer == 5)
+                { //checks if it's time to input a negative package
                     solution.GetRoute(int_random).getOrder()[position] = -1;  //assigns the negative package
                     timer = 0;
                     continue;
-                } else{
+                }
+                else
+                {
                         timer++;
                 }
                 solution.GetRoute(int_random).getOrder()[position] = packageNums[j]; //assigns the chosen route(driver) a new package
