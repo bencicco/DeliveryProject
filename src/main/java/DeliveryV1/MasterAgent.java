@@ -263,9 +263,9 @@ public class MasterAgent extends Agent
                     break;
 
                 case 3:
-                    //Calculating Routes//
-                    //Displaying Routes//
-                    //Send route to delivery driver
+                    // Calculating Routes
+                    // Displaying Routes
+                    // Send route to delivery driver
                     break;
             }
         }
@@ -302,84 +302,87 @@ public class MasterAgent extends Agent
     }
 
     // This is working! Creates a child from two parent route groups.
-    public RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2)
-    {
-        RouteGroup Child = new RouteGroup(parent1.Group.length);
-        int[] packageConsistency = new int[Coordinates.length];
-        int i = 0;
-        while (i < Coordinates.length)
-        {
-            //Used to make sure packages are not assigned twice
-            packageConsistency[i] = i;
-            i++;
+    public RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2) {
+        RouteGroup child = new RouteGroup(parent1.Group.length);
+        for (int i = 0; i < parent1.Group.length; i++) { // Initialise route distances
+            child.Group[i] = new Route(new int[Capacities[i]], 0);
         }
-        i = 0;
-        while (i < parent1.Group.length)
+        List<Integer> packageConsistency = new ArrayList<>();
+        for (int i = 0; i < child.Group.length; i++)
         {
-            // Initiate length of each route
-            Child.Group[i] = new Route(new int[parent1.Group[i].getOrder().length], 0);
-            i++;
-        }
-        i = 0;
-        while (i < parent1.Group.length)
-        {
-            // Choose a package to start the inhertiance from parent1
-            int startPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
-            // Choose a package to end the inheritance from parent1
-            int endPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
-            // Keep generating new end package until it is less than start package
-            while (endPackage < startPackage)
+            int StartPackage = (int) (Math.random() * child.Group[i].getOrder().length);
+            int randomEnd = (int) (Math.random() * (child.Group[i].getOrder().length) - StartPackage);
+            int EndPackage = child.Group[i].getOrder().length - randomEnd;
+            System.out.println("Start Package: " + StartPackage);
+            System.out.println("End Package: " + EndPackage);
+            for (int j = 0; j < child.Group[i].getOrder().length; j++)
             {
-                endPackage = (int) (Math.random() * parent1.Group[i].getOrder().length);
-            }
-            int j = 0;
-            while (j < parent1.Group[i].getOrder().length)
-            {
-                //Starting from the start of the child route, if the index is outside of the start and end package, inherit from package from parent 2
-                if (j < startPackage || j > endPackage)
+                if (j >= StartPackage && j <= EndPackage)
                 {
-                    if (packageConsistency[Child.Group[i].getOrder()[j]] >= 0 && parent2.Group[i].getOrder()[j] != -1)
+                    if(parent1.Group[i].getOrder()[j] != -1)
                     {
-                        Child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
-                        packageConsistency[Child.Group[i].getOrder()[j]] = -1;
+                        if (!packageConsistency.contains(parent1.Group[i].getOrder()[j])) {
+                            System.out.println("Inheriting package number: " + parent1.Group[i].getOrder()[j] + "at location: " + j + "from parent one");
+                            packageConsistency.add(parent1.Group[i].getOrder()[j]);
+                            child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
+                        }
+                        else
+                        {
+                            System.out.println("Inheriting -1 in place of parent 1 inheritance");
+                            child.Group[i].getOrder()[j] = -1;
+                        }
                     }
                     else
                     {
-                        Child.Group[i].getOrder()[j] = -1;
+                        System.out.println("Inheriting -1 from parent 1");
+                        child.Group[i].getOrder()[j] = -1;
                     }
                 }
-                // If index is within start and end package inherit from parent 1.
-                if (j >= startPackage && j <= endPackage)
+                else if (j < StartPackage || j > EndPackage)
                 {
-                    if (packageConsistency[Child.Group[i].getOrder()[j]] > -1 && parent1.Group[i].getOrder()[j] != -1)
+                    if(parent2.Group[i].getOrder()[j] != -1)
                     {
-                        Child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
-                        packageConsistency[Child.Group[i].getOrder()[j]] = -1;
+                        if (!packageConsistency.contains(parent2.Group[i].getOrder()[j]))
+                        {
+                            System.out.println("Inheriting package number: " + parent2.Group[i].getOrder()[j] + "at location: " + j + "from parent two");
+                            packageConsistency.add(child.Group[i].getOrder()[j]);
+                            child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
+                        }
+                        else
+                        {
+                            System.out.println("DOUBLE UP DETECTED!");
+                            System.out.println("Inheriting -1 in place of parent 2 inheritance");
+                            child.Group[i].getOrder()[j] = -1;
+                        }
                     }
                     else
                     {
-                        Child.Group[i].getOrder()[j] = -1;
+                        System.out.println("Inheriting -1 from parent two");
+                        child.Group[i].getOrder()[j] = -1;
                     }
                 }
-                j++;
             }
-            i++;
         }
-        return Child;
+        return child;
     }
 
 
 
-//    // Mutation: Implement a simple swap mutation
-//    private void swapMutation(Route route)
-//    {
-//        int[] order = route.getOrder();
-//        int pos1 = (int) (Math.random() * order.length);
-//        int pos2 = (int) (Math.random() * order.length);
-//        int temp = order[pos1];
-//        order[pos1] = order[pos2];
-//        order[pos2] = temp;
-//    }
+
+
+    // Mutation: Implement a simple swap mutation
+    private RouteGroup swapMutation(RouteGroup solution)
+    {
+        int randomRoute1 = (int) (Math.random() * solution.Group.length);
+        int randomRoute2 = (int) (Math.random() * solution.Group.length);
+        int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
+        int randomPos2 = (int) (Math.random() * solution.Group[randomRoute2].getOrder().length);
+        int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1];
+        System.out.println("Swapped route: " + randomRoute1 + ", order: " + randomPos1 + ", with route: " + randomRoute2 + ", order: " + randomPos2);
+        solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
+        solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
+        return solution;
+    }
 //
 //    private List<Route> selectRouteGroupForReproduction(List<Route> population, int tournamentSize, int numParents) {
 //        List<Route> parents = new ArrayList<>();
@@ -390,17 +393,18 @@ public class MasterAgent extends Agent
 //        return parents;
 //    }
 //
-//    private List<Route> crossoverAndMutate(List<Route> parents) {
-//        List<Route> offspring = new ArrayList<>();
-//        while (offspring.size() < population.size()) {
-//            Route parent1 = parents.get((int) (Math.random() * parents.size()));
-//            Route parent2 = parents.get((int) (Math.random() * parents.size()));
-//            Route child = orderedCrossover(parent1, parent2);
-//            swapMutation(child);
-//            offspring.add(child);
-//        }
-//        return offspring;
-//    }
+    public RouteGroup crossoverAndMutate(RouteGroup parent1, RouteGroup parent2)
+    {
+        RouteGroup child = orderedCrossover(parent1, parent2);
+        // 5% change of mutating
+        int mutation_chance = (int) (Math.random() * 20);
+        if (mutation_chance == 5)
+        {
+            System.out.println("Mutation Detected!");
+            child = swapMutation(child);
+        }
+        return child;
+    }
 
     public void processData()
     {

@@ -35,6 +35,11 @@ public class Tests
         parent2.Group[0] = route2;
         master = new MasterAgent();
         master.processData();
+        master.Capacities = new int[2];
+        master.PopulationSize = 2;
+        master.TotalDrivers = 2;
+        master.Capacities[0] = 3;
+        master.Capacities[1] = 4;
     }
 
     @Test
@@ -43,30 +48,58 @@ public class Tests
         route1.calculateTotalDistance(master.Distances, master.Coordinates);
         assertEquals(12, route1.totalDistance);
     }
-    @Test
-    public void OrderedCrossOverTest()
-    {
-        System.out.println(" ");
-        System.out.println("Parent1: ");
-        for(int i : parent1.Group[0].getOrder())
-        {
-            System.out.print(i);
-        }
-        System.out.println("");
-        System.out.println("Parent2: ");
 
-        for(int i : parent2.Group[0].getOrder())
+    @Test
+    public void orderedCrossOverMutateTest()
+    {
+        RouteGroup[] population = master.initialisePopulation();
+        for(int i = 0; i < 2; i ++)
         {
-            System.out.print(i);
+            System.out.println("parent: " + (i + 1));
+            for(Route route : population[i].Group)
+            {
+                System.out.println("Route: ");
+                for (int delivery : route.getOrder())
+                {
+                    System.out.print(delivery);
+                    System.out.print(", ");
+                }
+                System.out.println("");
+            }
         }
-        System.out.println("");
-        RouteGroup child = master.orderedCrossover(parent2, parent1);
-        System.out.println("");
+        RouteGroup child = master.crossoverAndMutate(population[1], population[0]);
         System.out.println("Child: ");
-        for(int i : child.Group[0].getOrder())
+        for (Route route : child.Group)
         {
-            System.out.print(i);
+            System.out.println("Route: ");
+            for (int delivery : route.getOrder())
+            {
+                System.out.print(delivery);
+                System.out.print(", ");
+            }
+            System.out.println("");
         }
-        System.out.println("");
+        System.out.println(" ");
+
+
+    }
+
+    @Test
+    public void PopulationGenerationTest()
+    {
+        RouteGroup[] population = master.initialisePopulation();
+        for(RouteGroup solution : population)
+        {
+            System.out.println("Solution: ");
+            for(Route route : solution.Group)
+            {
+                System.out.println("Route: ");
+                for(int delivery : route.getOrder())
+                {
+                    System.out.print(delivery);
+                }
+                System.out.println("");
+            }
+        }
     }
 }
