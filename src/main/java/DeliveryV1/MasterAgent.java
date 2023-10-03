@@ -12,18 +12,17 @@ import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
 
-import javax.swing.*;
+public class MasterAgent extends Agent
+{
 
-public class MasterAgent extends Agent {
-
-    private List<RouteGroup> population;
-    private int TotalDrivers;
-    private int PopulationSize; //should be initialised through some process. GUI input? ive set default in setup above generateInitialPopulation
+    private RouteGroup[] population;
+    public int TotalDrivers;
+    public int PopulationSize; //should be initialised through some process. GUI input? ive set default in setup above generateInitialPopulation
     public int[][] Distances; //Distances[x][y] corresponds to the distance between package x and y
     public int[][] Coordinates; //Coordinates[1] refers to a coordinate array for package1: [x,y]
     private int TotalPackages; //The total number of packages
     private AID[] Agents;
-    private int[] Capacities;
+    public int[] Capacities;
     private int[] DistanceRestraints;
     private int[][] Routes;
 
@@ -35,7 +34,7 @@ public class MasterAgent extends Agent {
     {
 
         PopulationSize = 100;
-        population = generateInitialPopulation();
+        population = initialisePopulation();
         processData();
         step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
@@ -69,7 +68,7 @@ public class MasterAgent extends Agent {
         });
     }
 
-    private RouteGroup[] initialisePopulation()
+    public RouteGroup[] initialisePopulation()
     {
         RouteGroup[] population = new RouteGroup[PopulationSize];
         // Outer loop: For each RouteGroup in the population:
@@ -87,7 +86,8 @@ public class MasterAgent extends Agent {
             }
         }
 
-        for (RouteGroup solution : population) {
+        for (RouteGroup solution : population)
+        {
             List<Integer> packages = new ArrayList<>();
             for (int i = 0; i < TotalPackages; i++) {
                 packages.add(i);
@@ -100,60 +100,14 @@ public class MasterAgent extends Agent {
                 int randomIndex = random.nextInt(packages.size());
                 int randomPackage = packages.get(randomIndex);
                 int randomRoute = random.nextInt(TotalDrivers);
-                solution.Group[randomRoute].getOrder()[randomIndex] = randomPackage;
+                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length);
+                solution.Group[randomRoute].getOrder()[randomOrder] = randomPackage;
                 packages.remove(randomIndex);
             }
         }
         return population;
     }
 
-
-
-    private List<RouteGroup> generateInitialPopulation() // prepare for nested loops :)
-    {
-        List<RouteGroup> Population = new ArrayList<RouteGroup>();
-
-        int[] packageNums = new int[TotalPackages]; // creates an array of numbers, each referring to a package, the number in the array is used as a signifier to identify the packets co-ordinates
-        for(int i = 0; i < TotalPackages; i++)
-        {
-            packageNums[i] = i;
-        }
-
-        for(int i = 0; i < PopulationSize; i++) // create a new RouteGroup for each value in the population size
-        {
-            RouteGroup solution = new RouteGroup(TotalDrivers); // the New initial solution That's going to be added to the overall Population
-
-            for(int j = 0; j < TotalPackages; j++)
-            {
-                Random rand = new Random();
-
-                int int_random = rand.nextInt(TotalDrivers); //Chooses random driver(route)
-                int timer = 0;
-
-                if(solution.GetRoute(int_random).getOrder().length == Capacities[int_random])
-                { //check if the capacity of the driver is full
-                    i-=1; //restart current iteration. Current concern is if total packages exceeds total capacity of all drivers this will be stuck in a loop
-                    continue;
-                }
-
-                int position = solution.GetRoute(int_random).getOrder().length + 1;  //This gets the current position of the driver capacity (eg if this has 4 packages it will return 5)
-
-                if (timer == 5)
-                { //checks if it's time to input a negative package
-                    solution.GetRoute(int_random).getOrder()[position] = -1;  //assigns the negative package
-                    timer = 0;
-                    continue;
-                }
-                else
-                {
-                        timer++;
-                }
-                solution.GetRoute(int_random).getOrder()[position] = packageNums[j]; //assigns the chosen route(driver) a new package
-            }
-            Population.add(solution);
-        }
-        return Population;
-    }
 
     private class RequestPerformer extends Behaviour
     {
@@ -415,9 +369,10 @@ public class MasterAgent extends Agent {
     }
 
 
-//
+
 //    // Mutation: Implement a simple swap mutation
-//    private void swapMutation(Route route) {
+//    private void swapMutation(Route route)
+//    {
 //        int[] order = route.getOrder();
 //        int pos1 = (int) (Math.random() * order.length);
 //        int pos2 = (int) (Math.random() * order.length);
@@ -426,7 +381,7 @@ public class MasterAgent extends Agent {
 //        order[pos2] = temp;
 //    }
 //
-//    private List<Route> selectRoutesForReproduction(List<Route> population, int tournamentSize, int numParents) {
+//    private List<Route> selectRouteGroupForReproduction(List<Route> population, int tournamentSize, int numParents) {
 //        List<Route> parents = new ArrayList<>();
 //        for (int i = 0; i < numParents; i++) {
 //            Route parent = tournamentSelection(population, tournamentSize);
