@@ -285,14 +285,15 @@ public class MasterAgent extends Agent
         float routegroupAverageDistance = 0;
         for (RouteGroup routegroup : population)
         {
-            routegroupAverageDistance += routegroup.GetTotalDistance() / totalPackages;
+            routegroupAverageDistance += routegroup.GetTotalDistance() / totalPackages; //maybe better results if dividing by total packages delivered instead?
         }
         for (int i = 0; i < population.length; i++)
         {
             int packagesDelivered = population[i].calculateTotalPackages();
             int totalDistance = population[i].CalculateTotalDistance(Distances, Coordinates);
-            Float distance = 1 - Float.parseFloat(0 + "." + totalDistance);
-            populationFitness[i] = packagesDelivered + distance;
+            //Float distance = 1 - Float.parseFloat(0 + "." + totalDistance);
+            //populationFitness[i] = packagesDelivered + distance;
+            populationFitness[i] = packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
         }
         populationFitness = normalise(populationFitness);
         return populationFitness;
@@ -315,6 +316,16 @@ public class MasterAgent extends Agent
             int middleIndex = length / 2;
             return sorted[middleIndex];
         }
+    }
+
+    private static float getMeanFitness(float[] a) {
+        float totalFitness = 0;
+        int length = a.length;
+        for(float i : a)
+        {
+            totalFitness += i;
+        }
+        return totalFitness/length;
     }
 
 
@@ -419,7 +430,8 @@ public class MasterAgent extends Agent
     {
         List<RouteGroup> tournament = new ArrayList<>();
         float[] fitness = evaluateFitness(Population, TotalPackages);
-        System.out.println("Average fitness: " + getMedianFitness(fitness));
+        System.out.println("Median fitness: " + getMedianFitness(fitness));
+        //System.out.println("Average fitness: " + getMeanFitness(fitness));
         while (tournament.size() < PopulationSize / 2 && getMedianFitness(fitness) != 1)
         {
             for (int i = 0; i < fitness.length; i++)
