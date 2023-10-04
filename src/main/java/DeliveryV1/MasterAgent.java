@@ -15,12 +15,13 @@ import jade.lang.acl.MessageTemplate;
 public class MasterAgent extends Agent
 {
 
-    private RouteGroup[] population;
+    public RouteGroup[] Population;
     public int TotalDrivers;
     public int PopulationSize; //should be initialised through some process. GUI input? ive set default in setup above generateInitialPopulation
+    public int Iterations;
     public int[][] Distances; //Distances[x][y] corresponds to the distance between package x and y
     public int[][] Coordinates; //Coordinates[1] refers to a coordinate array for package1: [x,y]
-    private int TotalPackages; //The total number of packages
+    public int TotalPackages; //The total number of packages
     private AID[] Agents;
     public int[] Capacities;
     private int[] DistanceRestraints;
@@ -33,8 +34,8 @@ public class MasterAgent extends Agent
     protected void setup()
     {
 
-        PopulationSize = 100;
-        population = initialisePopulation();
+        PopulationSize = 100000;
+        Population = initialisePopulation();
         processData();
         step = 0;
         ThisIsFucked = this; //This is fucked because if you call this later on it doesn't work because it's in a private class
@@ -67,47 +68,6 @@ public class MasterAgent extends Agent
             }
         });
     }
-
-    public RouteGroup[] initialisePopulation()
-    {
-        RouteGroup[] population = new RouteGroup[PopulationSize];
-        // Outer loop: For each RouteGroup in the population:
-        for (int i = 0; i < population.length; i++) {
-            population[i] = new RouteGroup(TotalDrivers);
-            // Inner loop 1: For each route in the route group:
-            for (int j = 0; j < population[i].Group.length; j++) {
-                population[i].Group[j] = new Route(new int[Capacities[j]], 0);
-                // Inner loop 2: For each package in the route:
-                for (int k = 0; k < Capacities[j]; k++)
-                {
-                    // Set all packages to -1;
-                    population[i].Group[j].getOrder()[k] = -1;
-                }
-            }
-        }
-
-        for (RouteGroup solution : population)
-        {
-            List<Integer> packages = new ArrayList<>();
-            for (int i = 0; i < TotalPackages; i++) {
-                packages.add(i);
-            }
-            Random random = new Random();
-
-            while (!packages.isEmpty()) {
-
-                // Generate a random index within the range of available packages
-                int randomIndex = random.nextInt(packages.size());
-                int randomPackage = packages.get(randomIndex);
-                int randomRoute = random.nextInt(TotalDrivers);
-                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length);
-                solution.Group[randomRoute].getOrder()[randomOrder] = randomPackage;
-                packages.remove(randomIndex);
-            }
-        }
-        return population;
-    }
-
 
     private class RequestPerformer extends Behaviour
     {
@@ -275,36 +235,110 @@ public class MasterAgent extends Agent
         }
     }
 
-    private float[] evaluateFitness(RouteGroup population, int totalPackages)
+    public RouteGroup[] initialisePopulation()
     {
-        float[] populationFitness = new float[population.Group.length];
-        float packageAverageDistance = population.GetTotalDistance() / totalPackages;
-        for (int i = 0; i < population.Group.length; i++)
+        RouteGroup[] population = new RouteGroup[PopulationSize];
+        // Outer loop: For each RouteGroup in the population:
+        for (int i = 0; i < population.length; i++)
         {
-            int packagesDelivered = population.GetRoute(i).getOrder().length;
-            int totalDistance = population.GetRoute(i).getTotalDistance();
-            populationFitness[i] = packagesDelivered - (totalDistance / (totalDistance + (packageAverageDistance * totalPackages)));
+            population[i] = new RouteGroup(TotalDrivers);
+            // Inner loop 1: For each route in the route group:
+            for (int j = 0; j < population[i].Group.length; j++)
+            {
+                population[i].Group[j] = new Route(new int[Capacities[j]], 0);
+                // Inner loop 2: For each package in the route:
+                for (int k = 0; k < Capacities[j]; k++)
+                {
+                    // Set all packages to -1;
+                    population[i].Group[j].getOrder()[k] = -1;
+                }
+            }
+        }
+
+        for (RouteGroup solution : population)
+        {
+            List<Integer> packages = new ArrayList<>();
+            for (int i = 0; i < TotalPackages; i++) {
+                packages.add(i);
+            }
+            Random random = new Random();
+
+            while (!packages.isEmpty())
+            {
+                // Generate a random index within the range of available packages
+                int randomIndex = random.nextInt(packages.size());
+                int randomPackage = packages.get(randomIndex);
+                int randomRoute = random.nextInt(TotalDrivers);
+                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length);
+                solution.Group[randomRoute].getOrder()[randomOrder] = randomPackage;
+                packages.remove(randomIndex);
+            }
+        }
+        Population = population;
+        return population;
+
+    }
+
+    public float[] evaluateFitness(RouteGroup[] population, int totalPackages)
+    {
+        float[] populationFitness = new float[population.length];
+        float routegroupAverageDistance = 0;
+        for (RouteGroup routegroup : population)
+        {
+            routegroupAverageDistance += routegroup.GetTotalDistance() / totalPackages;
+        }
+        for (int i = 0; i < population.length; i++)
+        {
+            int packagesDelivered = population[i].calculateTotalPackages();
+            int totalDistance = population[i].CalculateTotalDistance(Distances, Coordinates);
+            Float distance = 1 - Float.parseFloat(0 + "." + totalDistance);
+            populationFitness[i] = packagesDelivered + distance;
         }
         populationFitness = normalise(populationFitness);
         return populationFitness;
     }
 
-    //This isn't functional or tested, just an idea//
-    private RouteGroup tournamentSelection(List<RouteGroup> population, int tournamentSize)
-    {
-        List<RouteGroup> tournament = new ArrayList<>();
-        for (int i = 0; i < tournamentSize; i++)
-        {
-            int randomIndex = (int) (Math.random() * population.size());
-            tournament.add(population.get(randomIndex));
+    private static float getMedianFitness(float[] a) {
+        // Make a copy of the input array to avoid modifying the original array
+        float[] sorted = a.clone();
+        Arrays.sort(sorted);
+
+        int length = sorted.length;
+
+        if (length % 2 == 0) {
+            // If the length of the array is even, return the average of the two middle values
+            int middleIndex1 = length / 2 - 1;
+            int middleIndex2 = length / 2;
+            return (sorted[middleIndex1] + sorted[middleIndex2]) / 2.0f;
+        } else {
+            // If the length of the array is odd, return the middle value
+            int middleIndex = length / 2;
+            return sorted[middleIndex];
         }
-        return Collections.min(tournament, Comparator.comparing(RouteGroup::GetTotalDistance));
     }
+
+
+    private static float[] normalise(float[] a)
+    {
+        float[] result = new float[a.length];
+        float[] sorted = a.clone();
+        Arrays.sort(sorted);
+
+        float minVal = sorted[0];
+        float maxVal = sorted[sorted.length - 1];
+        for (int i = 0; i < a.length; i++)
+        {
+            result[i] = (a[i] - minVal) / (maxVal - minVal);
+        }
+        return result;
+    }
+
 
     // This is working! Creates a child from two parent route groups.
     public RouteGroup orderedCrossover(RouteGroup parent1, RouteGroup parent2) {
         RouteGroup child = new RouteGroup(parent1.Group.length);
-        for (int i = 0; i < parent1.Group.length; i++) { // Initialise route distances
+        for (int i = 0; i < parent1.Group.length; i++)
+        { // Initialise route distances
             child.Group[i] = new Route(new int[Capacities[i]], 0);
         }
         List<Integer> packageConsistency = new ArrayList<>();
@@ -313,8 +347,6 @@ public class MasterAgent extends Agent
             int StartPackage = (int) (Math.random() * child.Group[i].getOrder().length);
             int randomEnd = (int) (Math.random() * (child.Group[i].getOrder().length) - StartPackage);
             int EndPackage = child.Group[i].getOrder().length - randomEnd;
-            System.out.println("Start Package: " + StartPackage);
-            System.out.println("End Package: " + EndPackage);
             for (int j = 0; j < child.Group[i].getOrder().length; j++)
             {
                 if (j >= StartPackage && j <= EndPackage)
@@ -322,19 +354,16 @@ public class MasterAgent extends Agent
                     if(parent1.Group[i].getOrder()[j] != -1)
                     {
                         if (!packageConsistency.contains(parent1.Group[i].getOrder()[j])) {
-                            System.out.println("Inheriting package number: " + parent1.Group[i].getOrder()[j] + "at location: " + j + "from parent one");
                             packageConsistency.add(parent1.Group[i].getOrder()[j]);
                             child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
                         }
                         else
                         {
-                            System.out.println("Inheriting -1 in place of parent 1 inheritance");
                             child.Group[i].getOrder()[j] = -1;
                         }
                     }
                     else
                     {
-                        System.out.println("Inheriting -1 from parent 1");
                         child.Group[i].getOrder()[j] = -1;
                     }
                 }
@@ -344,20 +373,16 @@ public class MasterAgent extends Agent
                     {
                         if (!packageConsistency.contains(parent2.Group[i].getOrder()[j]))
                         {
-                            System.out.println("Inheriting package number: " + parent2.Group[i].getOrder()[j] + "at location: " + j + "from parent two");
-                            packageConsistency.add(child.Group[i].getOrder()[j]);
+                            packageConsistency.add(parent2.Group[i].getOrder()[j]);
                             child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
                         }
                         else
                         {
-                            System.out.println("DOUBLE UP DETECTED!");
-                            System.out.println("Inheriting -1 in place of parent 2 inheritance");
                             child.Group[i].getOrder()[j] = -1;
                         }
                     }
                     else
                     {
-                        System.out.println("Inheriting -1 from parent two");
                         child.Group[i].getOrder()[j] = -1;
                     }
                 }
@@ -365,10 +390,6 @@ public class MasterAgent extends Agent
         }
         return child;
     }
-
-
-
-
 
     // Mutation: Implement a simple swap mutation
     private RouteGroup swapMutation(RouteGroup solution)
@@ -378,21 +399,11 @@ public class MasterAgent extends Agent
         int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
         int randomPos2 = (int) (Math.random() * solution.Group[randomRoute2].getOrder().length);
         int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1];
-        System.out.println("Swapped route: " + randomRoute1 + ", order: " + randomPos1 + ", with route: " + randomRoute2 + ", order: " + randomPos2);
         solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
         solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
         return solution;
     }
-//
-//    private List<Route> selectRouteGroupForReproduction(List<Route> population, int tournamentSize, int numParents) {
-//        List<Route> parents = new ArrayList<>();
-//        for (int i = 0; i < numParents; i++) {
-//            Route parent = tournamentSelection(population, tournamentSize);
-//            parents.add(parent);
-//        }
-//        return parents;
-//    }
-//
+
     public RouteGroup crossoverAndMutate(RouteGroup parent1, RouteGroup parent2)
     {
         RouteGroup child = orderedCrossover(parent1, parent2);
@@ -400,10 +411,89 @@ public class MasterAgent extends Agent
         int mutation_chance = (int) (Math.random() * 20);
         if (mutation_chance == 5)
         {
-            System.out.println("Mutation Detected!");
             child = swapMutation(child);
         }
         return child;
+    }
+    public List<RouteGroup> tournamentSelection()
+    {
+        List<RouteGroup> tournament = new ArrayList<>();
+        float[] fitness = evaluateFitness(Population, TotalPackages);
+        System.out.println("Average fitness: " + getMedianFitness(fitness));
+        while (tournament.size() < PopulationSize / 2 && getMedianFitness(fitness) != 1)
+        {
+            for (int i = 0; i < fitness.length; i++)
+            {
+                if (fitness[i] > getMedianFitness(fitness))
+                {
+                    tournament.add(Population[i]);
+                }
+            }
+        }
+        return tournament;
+    }
+
+    public RouteGroup FindSolution()
+    {
+        int iterationCount = 0;
+        while (iterationCount < Iterations && getMedianFitness(evaluateFitness(Population, TotalPackages)) != 1)
+        {
+            createNewGeneration(tournamentSelection());
+            iterationCount += 1;
+        }
+        float f = 0;
+        int bestsolutionindex = 0;
+        float bestfitness = 0;
+        float [] fitness = evaluateFitness(Population, TotalPackages);
+        for (int i = 0; i < fitness.length; i++)
+        {
+            if (fitness[i] > bestfitness)
+            {
+                bestfitness = fitness[i];
+                bestsolutionindex = i;
+            }
+        }
+        return Population[bestsolutionindex];
+
+    }
+
+    public void createNewGeneration (List<RouteGroup> tournament)
+    {
+        List<RouteGroup> newGeneration = new ArrayList<>();
+        while (tournament.size() > 1)
+        {
+            int parent1 = (int) (Math.random() * tournament.size());
+            int parent2 = (int) (Math.random() * tournament.size());
+            while (parent1 == parent2)
+            {
+                parent2 = (int) (Math.random() * tournament.size());
+            }
+            newGeneration.add(crossoverAndMutate(tournament.get(parent1), tournament.get(parent2)));
+            newGeneration.add(crossoverAndMutate(tournament.get(parent1), tournament.get(parent2)));
+            newGeneration.add(crossoverAndMutate(tournament.get(parent1), tournament.get(parent2)));
+            newGeneration.add(crossoverAndMutate(tournament.get(parent1), tournament.get(parent2)));
+
+            tournament.remove(parent1);
+            if (parent2 > 0)
+            {
+                tournament.remove(parent2 - 1);
+            } else
+            {
+                tournament.remove(parent2);
+            }
+        }
+        if (tournament.size() == 1)
+        {
+            newGeneration.add(crossoverAndMutate(tournament.get(0), tournament.get(0)));
+            newGeneration.add(crossoverAndMutate(tournament.get(0), tournament.get(0)));
+            newGeneration.add(crossoverAndMutate(tournament.get(0), tournament.get(0)));
+            newGeneration.add(crossoverAndMutate(tournament.get(0), tournament.get(0)));
+        }
+        Population = new RouteGroup[newGeneration.size()];
+        for (int i = 0; i < newGeneration.size(); i++)
+        {
+            Population[i] = newGeneration.get(i);
+        }
     }
 
     public void processData()
@@ -466,20 +556,5 @@ public class MasterAgent extends Agent
         double yval = a[1] - b[1];
         double distance = Math.sqrt(xval * xval  + yval * yval);
         return (int) Math.round(distance); //Distance values are rounded to integers
-    }
-
-    private static float[] normalise(float[] a)
-    {
-        float[] result = new float[a.length];
-        float[] sorted = a.clone();
-        Arrays.sort(sorted);
-
-        float minVal = sorted[0];
-        float maxVal = sorted[sorted.length - 1];
-        for (int i = 0; i < a.length; i++)
-        {
-            result[i] = (a[i] - minVal) / (maxVal - minVal);
-        }
-        return result;
     }
 }

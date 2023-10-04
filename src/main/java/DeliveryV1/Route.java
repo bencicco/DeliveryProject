@@ -26,7 +26,7 @@ public class Route
         {
             i += 1;
         }
-        FirstPackage = i;
+        FirstPackage = order[i];
     }
 
     public void GetLastPackage()
@@ -36,7 +36,7 @@ public class Route
         {
             i -= 1;
         }
-        LastPackage = i;
+        LastPackage = order[i];
     }
 
 

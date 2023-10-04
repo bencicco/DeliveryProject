@@ -23,7 +23,7 @@ public class RouteGroup
         return totalDistance;
     }
 
-    public void CalculateTotalDistance(int[][] Distances, int[][] Coordinates)
+    public int CalculateTotalDistance(int[][] Distances, int[][] Coordinates)
     {
         totalDistance = 0;
         for (int i = 0; i < GroupSize; i++)
@@ -34,6 +34,16 @@ public class RouteGroup
                 totalDistance += Group[i].getTotalDistance();
             }
         }
+        return totalDistance;
+    }
+    public int calculateTotalPackages()
+    {
+        int totalpackages = 0;
+        for (Route route : Group)
+        {
+            totalpackages += route.getLength();
+        }
+        return totalpackages;
     }
 
 }

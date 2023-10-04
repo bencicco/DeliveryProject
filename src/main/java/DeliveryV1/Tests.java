@@ -3,6 +3,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 public class Tests
@@ -36,17 +38,54 @@ public class Tests
         master = new MasterAgent();
         master.processData();
         master.Capacities = new int[2];
-        master.PopulationSize = 2;
+        master.PopulationSize = 1000;
         master.TotalDrivers = 2;
         master.Capacities[0] = 3;
-        master.Capacities[1] = 4;
+        master.Capacities[1] = 3;
+    }
+
+//    @Test
+//    public void DistanceCheck()
+//    {
+//        route1.calculateTotalDistance(master.Distances, master.Coordinates);
+//        assertEquals(12, route1.totalDistance);
+//    }
+//
+//    @Test
+//    public void tournamentSelectionCheck() {
+//        RouteGroup[] population = master.initialisePopulation();
+//        List<RouteGroup> tournament = master.tournamentSelection();
+//        System.out.println("Tournament Length: " + tournament.size());
+//    }
+
+    @Test
+    public void FindBestSolution()
+    {
+        master.initialisePopulation();
+        master.Iterations = 100;
+        RouteGroup solution = master.FindSolution();
+        for(Route route : solution.Group)
+        {
+            System.out.println("Route: ");
+            for (int delivery : route.getOrder())
+            {
+                System.out.print(delivery);
+                System.out.print(", ");
+            }
+            System.out.println("");
+        }
+        System.out.println("Distance: " + solution.CalculateTotalDistance(master.Distances, master.Coordinates));
+
     }
 
     @Test
-    public void DistanceCheck()
+    public void generateNewGenerationTest()
     {
-        route1.calculateTotalDistance(master.Distances, master.Coordinates);
-        assertEquals(12, route1.totalDistance);
+        RouteGroup[] population = master.initialisePopulation();
+        List<RouteGroup> tournament = master.tournamentSelection();
+        master.createNewGeneration(tournament);
+        System.out.println(master.Population.length);
+
     }
 
     @Test
@@ -80,8 +119,6 @@ public class Tests
             System.out.println("");
         }
         System.out.println(" ");
-
-
     }
 
     @Test
