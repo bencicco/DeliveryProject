@@ -37,11 +37,13 @@ public class Tests
         parent2.Group[0] = route2;
         master = new MasterAgent();
         master.processData();
-        master.Capacities = new int[2];
-        master.PopulationSize = 1000;
-        master.TotalDrivers = 2;
-        master.Capacities[0] = 3;
-        master.Capacities[1] = 3;
+        master.Capacities = new int[4];
+        master.PopulationSize = 5000;
+        master.TotalDrivers = 4;
+        master.Capacities[0] = 2;
+        master.Capacities[1] = 2;
+        master.Capacities[3] = 3;
+        master.Capacities[2] = 2;
     }
 
 //    @Test
@@ -62,8 +64,9 @@ public class Tests
     public void FindBestSolution()
     {
         master.initialisePopulation();
-        master.Iterations = 100;
+        master.Iterations = 10000;
         RouteGroup solution = master.FindSolution();
+        System.out.println("There are: " + solution.Group.length + " routes");
         for(Route route : solution.Group)
         {
             System.out.println("Route: ");
@@ -75,7 +78,6 @@ public class Tests
             System.out.println("");
         }
         System.out.println("Distance: " + solution.CalculateTotalDistance(master.Distances, master.Coordinates));
-
     }
 
     @Test

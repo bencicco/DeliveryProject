@@ -21,22 +21,27 @@ public class Route
 
     public void GetFirstPackage()
     {
-        int i = 0;
-        while (order[i] == -1)
-        {
-            i += 1;
+        for (int i = 0; i < order.length; i++) {
+            if (getOrder()[i] >= 0)
+            {
+                FirstPackage = order[i]; // Update LastPackage to the index of the last non-negative integer
+                return; // Exit the loop once the last non-negative integer is found
+            }
         }
-        FirstPackage = order[i];
+        // Handle the case where there are no non-negative integers in the array
+        FirstPackage = -1;
     }
 
-    public void GetLastPackage()
-    {
-        int i = order.length - 1;
-        while (order[i] == -1)
-        {
-            i -= 1;
+    private void GetLastPackage() {
+        for (int i = getOrder().length - 1; i >= 0; i--) {
+            if (getOrder()[i] >= 0)
+            {
+                LastPackage = order[i]; // Update LastPackage to the index of the last non-negative integer
+                return; // Exit the loop once the last non-negative integer is found
+            }
         }
-        LastPackage = order[i];
+        // Handle the case where there are no non-negative integers in the array
+        LastPackage = -1; // For example, set LastPackage to -1 if no non-negative integers are found
     }
 
 
@@ -65,23 +70,56 @@ public class Route
 
     public int calculateFirstDistance(int[][]coordinates)
     {
-        return distanceCalculator(Depot, coordinates[FirstPackage]);
+        GetFirstPackage();
+        if (FirstPackage != -1)
+        {
+            return distanceCalculator(Depot, coordinates[FirstPackage]);
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     public int calculateLastDistance(int[][]coordinates)
     {
-        return distanceCalculator(Depot, coordinates[LastPackage]);
+        GetLastPackage();
+        if (FirstPackage != -1)
+        {
+            return distanceCalculator(Depot, coordinates[LastPackage]);
+        }
+        else
+        {
+            return 0;
+        }
     }
 
     // Calculate the total distance of the route
     public void calculateTotalDistance(int[][] distances, int[][] coordinates)
     {
+        int[] depot = new int[2];
+        depot[0] = 0;
+        depot[1] = 1;
         int distance = 0;
-        distance += calculateFirstDistance(coordinates);
-        distance += calculateLastDistance(coordinates);
+        GetLastPackage();
+        GetFirstPackage();
+        if (FirstPackage != -1)
+        {
+            distance += calculateFirstDistance(coordinates);
+            distance += calculateLastDistance(coordinates);
+        }
         int j = 0;
-        int[] StartCoordinates = coordinates[FirstPackage];
-        int[] EndCoordinates = coordinates[LastPackage];
+        if (FirstPackage != -1 && LastPackage != -1)
+        {
+            int[] StartCoordinates = coordinates[FirstPackage];
+            int[] EndCoordinates = coordinates[LastPackage];
+        }
+        else
+        {
+            int[] StartCoordinates = Depot;
+            int[] EndCoordinates = Depot;
+        }
+
         for (int i = 0; i < order.length - 1;)
         {
             while(i < order.length && order[i] == -1)

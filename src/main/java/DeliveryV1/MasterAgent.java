@@ -11,6 +11,7 @@ import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+import java.lang.Math;
 
 public class MasterAgent extends Agent
 {
@@ -291,8 +292,8 @@ public class MasterAgent extends Agent
         {
             int packagesDelivered = population[i].calculateTotalPackages();
             int totalDistance = population[i].CalculateTotalDistance(Distances, Coordinates);
-            Float distance = 1 - Float.parseFloat(0 + "." + totalDistance);
-            populationFitness[i] = packagesDelivered + distance;
+            // Float distance = 1 - Float.parseFloat(0 + "." + totalDistance);
+            populationFitness[i] = (float) (packagesDelivered) - (float) (0.001 * totalDistance);
         }
         populationFitness = normalise(populationFitness);
         return populationFitness;
