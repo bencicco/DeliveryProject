@@ -142,6 +142,18 @@ public class MasterAgent extends Agent
                     else
                     {
                         System.out.println("Could not find all Agents!");
+                        boolean confirm = false;
+                        String response = "";
+                        while(!confirm)
+                        {
+                            System.out.println("Type yes to search again!");
+                            Scanner scanner = new Scanner(System.in);
+                            response = scanner.next();
+                            if (Objects.equals(response, "yes"))
+                            {
+                                confirm = true;
+                            }
+                        }
                     }
                     break;
                 case 1:
