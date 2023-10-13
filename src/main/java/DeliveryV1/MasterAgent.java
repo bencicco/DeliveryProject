@@ -16,6 +16,7 @@ import java.lang.Math;
 public class MasterAgent extends Agent
 {
 
+    public int MutationRate;
     public RouteGroup[] Population;
     public int TotalDrivers;
     public int PopulationSize; //should be initialised through some process. GUI input? ive set default in setup above generateInitialPopulation
@@ -196,6 +197,7 @@ public class MasterAgent extends Agent
                     }
                     break;
                 case 2:
+                    System.out.println("Grabbing Distances: ");
                     DistanceRestraints = new int[Agents.length];
                     i = 0;
                     for (AID agent : Agents) {
@@ -210,11 +212,13 @@ public class MasterAgent extends Agent
                         msg = blockingReceive(mt);
                         if (msg != null)
                         {
+                            System.out.println("Recieved Message!");
                             String content = msg.getContent();
                             if(!Objects.equals(content, "yes"))
                             {
                                 DistanceRestraints[i] = Integer.parseInt(content);
                                 i += 1;
+                                System.out.println("Recieved Reply Number: " + i);
                             }
                         }
                         else
@@ -225,6 +229,7 @@ public class MasterAgent extends Agent
                     if (i == DistanceRestraints.length)
                     {
                         step = 3;
+                        System.out.println("Step = 3");
                         i = 0;
                         while (i < DistanceRestraints.length)
                         {
@@ -236,15 +241,47 @@ public class MasterAgent extends Agent
                     break;
 
                 case 3:
-                    // Calculating Routes
-                    // Displaying Routes
-                    // Send route to delivery driver
+                    // Determine Route
+                    PopulationSize = 500;
+                    Iterations = 250;
+                    MutationRate = 10;
+                    initialisePopulation();
+                    System.out.println("Attempting to find solution");
+                    RouteGroup solution = FindSolution();
+                    System.out.println("Found solution");
+                    for(Route route : solution.Group)
+                    {
+                        System.out.println("Route: ");
+                        for (int delivery : route.getOrder())
+                        {
+                            System.out.print(delivery);
+                            System.out.print(", ");
+                        }
+                        System.out.println("");
+                    }
+                    // Send solution.Group[0] to Agents[0]
+
+                    for (int k = 0; k < Agents.length; k++)
+                    {
+                        String routeMessage = "Route:";
+                        for (int delivery : solution.Group[k].getOrder())
+                        {
+                            routeMessage += " " + delivery;
+                        }
+                        ACLMessage msg = new ACLMessage(ACLMessage.INFORM);
+                        msg.addReceiver(Agents[k]);
+                        msg.setContent(routeMessage);
+                        send(msg);
+
+                    }
+                    step = 4;
                     break;
             }
         }
         public boolean done()
+
         {
-            return step == 3;
+            return step == 4;
         }
     }
 
@@ -420,9 +457,9 @@ public class MasterAgent extends Agent
     public RouteGroup crossoverAndMutate(RouteGroup parent1, RouteGroup parent2)
     {
         RouteGroup child = orderedCrossover(parent1, parent2);
-        // 5% change of mutating
-        int mutation_chance = (int) (Math.random() * 20);
-        if (mutation_chance == 5)
+        // 25% change of mutating
+        int mutation_chance = (int) (Math.random() * MutationRate);
+        if (mutation_chance == 1)
         {
             child = swapMutation(child);
         }
@@ -432,7 +469,6 @@ public class MasterAgent extends Agent
     {
         List<RouteGroup> tournament = new ArrayList<>();
         float[] fitness = evaluateFitness(Population, TotalPackages);
-        System.out.println("Average fitness: " + getMedianFitness(fitness));
         while (tournament.size() < PopulationSize / 2 && getMedianFitness(fitness) != 1)
         {
             for (int i = 0; i < fitness.length; i++)
