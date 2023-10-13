@@ -2,9 +2,9 @@ package DeliveryV1;
 
 public class Route
 {
-    private int [] Depot;
-    private int FirstPackage;
-    private int LastPackage;
+    private int [] Depot; // Represents the coordinates of the depot. Depot[0] = x coordinate Depot[1] = y
+    private int FirstPackage; // Represents the first non-negative package
+    private int LastPackage; // Represents the last non-negative  package
     private int[] order; // Represents the order of packages to be delivered
     public int totalDistance; // Represents the total distance of the route
 
@@ -29,7 +29,7 @@ public class Route
             }
         }
         // Handle the case where there are no non-negative integers in the array
-        FirstPackage = -1;
+        FirstPackage = -1; // -1 Represents an empty package, i.e no package to be delivered
     }
 
     private void GetLastPackage() {
@@ -41,7 +41,7 @@ public class Route
             }
         }
         // Handle the case where there are no non-negative integers in the array
-        LastPackage = -1; // For example, set LastPackage to -1 if no non-negative integers are found
+        LastPackage = -1; // set LastPackage to -1 if no non-negative integers are found
     }
 
 
@@ -99,7 +99,7 @@ public class Route
     {
         int[] depot = new int[2];
         depot[0] = 0;
-        depot[1] = 1;
+        depot[1] = 0;
         int distance = 0;
         GetLastPackage();
         GetFirstPackage();

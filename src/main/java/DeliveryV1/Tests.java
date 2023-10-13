@@ -37,13 +37,12 @@ public class Tests
         parent2.Group[0] = route2;
         master = new MasterAgent();
         master.processData();
-        master.Capacities = new int[4];
-        master.PopulationSize = 5000;
-        master.TotalDrivers = 4;
-        master.Capacities[0] = 2;
-        master.Capacities[1] = 2;
-        master.Capacities[3] = 3;
-        master.Capacities[2] = 2;
+        master.Capacities = new int[3];
+        master.PopulationSize = 1000;
+        master.TotalDrivers = 3;
+        master.Capacities[0] = 3;
+        master.Capacities[1] = 3;
+        master.Capacities[2] = 3;
     }
 
 //    @Test
@@ -60,11 +59,43 @@ public class Tests
 //        System.out.println("Tournament Length: " + tournament.size());
 //    }
 
+//    @Test public void FindBestOptimisers()
+//    {
+//        master.initialisePopulation();
+//        master.Iterations = 1000;
+//        master.PopulationSize = 500;
+//        master.MutationRate = 20;
+//        int OptimalSolutions1 = 0;
+//        for(int i = 0; i < 20; i++)
+//        {
+//            master.initialisePopulation();
+//            RouteGroup solution = master.FindSolution();
+//            if (solution.CalculateTotalDistance(master.Distances, master.Coordinates) == 144)
+//            {
+//                OptimalSolutions1 += 1;
+//            }
+//        }
+//        master.MutationRate = 4;
+//        int OptimalSolutions2 = 0;
+//        for(int i = 0; i < 20; i++)
+//        {
+//            master.initialisePopulation();
+//            RouteGroup solution = master.FindSolution();
+//            if (solution.CalculateTotalDistance(master.Distances, master.Coordinates) == 144)
+//            {
+//                OptimalSolutions2 += 1;
+//            }
+//        }
+//        System.out.println("Optimal solutions for 5% mutation rate: " + OptimalSolutions1);
+//        System.out.println("Optimal solutions for 25% mutation rate: " + OptimalSolutions2);
+//    }
     @Test
     public void FindBestSolution()
     {
+        master.PopulationSize = 500;
+        master.MutationRate = 4;
         master.initialisePopulation();
-        master.Iterations = 10000;
+        master.Iterations = 1000;
         RouteGroup solution = master.FindSolution();
         System.out.println("There are: " + solution.Group.length + " routes");
         for(Route route : solution.Group)
@@ -78,6 +109,9 @@ public class Tests
             System.out.println("");
         }
         System.out.println("Distance: " + solution.CalculateTotalDistance(master.Distances, master.Coordinates));
+        System.out.println("Distance 0 --> 1:" + master.Distances[0][1]);
+        System.out.println("Distance 0 --> 2:" + master.Distances[0][2]);
+        System.out.println("Distance 1 --> 2:" + master.Distances[1][2]);
     }
 
     @Test

@@ -18,7 +18,6 @@ public class RouteGroup
     }
 
     public int GetTotalDistance()
-
     {
         return totalDistance;
     }
@@ -44,6 +43,20 @@ public class RouteGroup
             totalpackages += route.getLength();
         }
         return totalpackages;
+    }
+
+    public void displayRouteGroup()
+    {
+        for (Route route : this.Group)
+        {
+            System.out.println("Route: ");
+            for (int delivery : route.getOrder())
+            {
+                System.out.print(delivery);
+                System.out.print(", ");
+            }
+            System.out.println("");
+        }
     }
 
 }
