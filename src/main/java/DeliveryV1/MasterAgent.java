@@ -26,7 +26,7 @@ public class MasterAgent extends Agent
     public int TotalPackages; // The total number of packages
     private AID[] Agents; // Stores all the DA agents
     public int[] Capacities; // Stores the capacities for each DA
-    private int[] DistanceRestraints; // Stores the distance restraint for each DA
+    public int[] DistanceRestraints; // Stores the distance restraint for each DA
 
     private RouteGroup Solution;
 
