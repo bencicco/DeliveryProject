@@ -50,6 +50,20 @@ public class MasterAgent extends Agent
                     input = true;
                 }
             }
+            if (Response.equals("n"))
+            {
+                System.out.println("Please enter the total amount of packages you wish to be delivered: ");
+                TotalPackages = scanner.nextInt();
+                Coordinates = new int[TotalPackages][2];
+                Random random = new Random();
+                for (int[] delivery : Coordinates)
+                {
+                    delivery[0] = random.nextInt(201) - 100;  // Generates a random number between -100 and 100
+                    delivery[1] = random.nextInt(201) - 100;  // Generates a random number between -100 and 100
+                }
+                updateDistanceArray();
+                input = true;
+            }
         }
         System.out.println("Enter the total number of delivery drivers available");
         TotalDrivers = scanner.nextInt();  // Stores number of drivers to know when all delivery agents have been added
