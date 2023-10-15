@@ -7,6 +7,8 @@ public class Route
     private int LastPackage; // Represents the last non-negative  package
     private int[] order; // Represents the order of packages to be delivered
     public int totalDistance; // Represents the total distance of the route
+    private int lastEditedOrder; //
+    private int lastEditedPackage; //
 
     public Route(int[] order, int totalDistance)
     {
@@ -17,6 +19,19 @@ public class Route
         Depot = new int[2];
         Depot[0] = 0;
         Depot[1] = 0;
+    }
+
+    public void AddPackage(int packageID, int order)
+    {
+        lastEditedOrder = order;
+        lastEditedPackage = Order[order];
+
+        Order[order] = packageID;
+    }
+
+    public void UndoPackage()
+    {
+        Order[lastEditedOrder] = lastEditedPackage;
     }
 
     public void GetFirstPackage()
