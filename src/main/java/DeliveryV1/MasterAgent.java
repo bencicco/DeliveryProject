@@ -21,7 +21,7 @@ public class MasterAgent extends Agent
     public int TotalDrivers; // A number so that the MA knows whether it has found all delivery agents, initalised through user input
     public int PopulationSize; // The population size for the GA
     public int Iterations; // The number of generations for the GA
-    public int[][] Distances; // Distances[x][y] corresponds to the distance between package x and y
+    public float[][] Distances; // Distances[x][y] corresponds to the distance between package x and y
     public int[][] Coordinates; // Coordinates[1] refers to a coordinate array for package1: [x,y]
     public int TotalPackages; // The total number of packages
     private AID[] Agents; // Stores all the DA agents
@@ -294,7 +294,7 @@ public class MasterAgent extends Agent
     }
     private void updateDistanceArray()
     {
-        Distances = new int[TotalPackages][TotalPackages];
+        Distances = new float[TotalPackages][TotalPackages];
         for(int i = 0; i <  TotalPackages; i++)
         {
             for (int j = 0; j < TotalPackages; j++)
@@ -310,11 +310,11 @@ public class MasterAgent extends Agent
             }
         }
     }
-    private static int distanceCalculator(int[] a, int[] b)
+    private static float distanceCalculator(int[] a, int[] b)
     {
         double xval = a[0] - b[0];
         double yval = a[1] - b[1];
         double distance = Math.sqrt(xval * xval  + yval * yval);
-        return (int) Math.round(distance); // Distance values are rounded to integers
+        return (float) distance;
     }
 }

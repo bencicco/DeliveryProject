@@ -2,7 +2,7 @@ package DeliveryV1;
 
 public class RouteGroup
 {
-    private int totalDistance;
+    private float totalDistance;
     private int GroupSize;
     public Route[] Group;
 
@@ -17,12 +17,12 @@ public class RouteGroup
         return Group[i];
     }
 
-    public int GetTotalDistance()
+    public float GetTotalDistance()
     {
         return totalDistance;
     }
 
-    public int CalculateTotalDistance(int[][] Distances, int[][] Coordinates)
+    public float CalculateTotalDistance(float[][] Distances, int[][] Coordinates)
     {
         totalDistance = 0;
         for (int i = 0; i < GroupSize; i++)

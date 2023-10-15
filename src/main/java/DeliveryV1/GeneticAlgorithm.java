@@ -95,7 +95,7 @@ public class GeneticAlgorithm
         for (int i = 0; i < population.length; i++)
         {
             int packagesDelivered = population[i].calculateTotalPackages();
-            int totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
+            float totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
             //populationFitness[i] = (float) (packagesDelivered) - (float) (0.001 * totalDistance);
             populationFitness[i] = (float) packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
         }

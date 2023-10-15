@@ -5,14 +5,14 @@ public class Route
     private int [] Depot; // Represents the coordinates of the depot. Depot[0] = x coordinate Depot[1] = y
     private int FirstPackage; // Represents the first non-negative package
     private int LastPackage; // Represents the last non-negative  package
-    private int[] order; // Represents the order of packages to be delivered
-    public int totalDistance; // Represents the total distance of the route
+    private int[] Order; // Represents the order of packages to be delivered
+    public float totalDistance; // Represents the total distance of the route
     private int lastEditedOrder; //
     private int lastEditedPackage; //
 
-    public Route(int[] order, int totalDistance)
+    public Route(int[] order, float totalDistance)
     {
-        this.order = order;
+        this.Order = order;
         this.totalDistance = totalDistance;
         GetFirstPackage();
         GetLastPackage();
@@ -36,10 +36,10 @@ public class Route
 
     public void GetFirstPackage()
     {
-        for (int i = 0; i < order.length; i++) {
+        for (int i = 0; i < Order.length; i++) {
             if (getOrder()[i] >= 0)
             {
-                FirstPackage = order[i]; // Update LastPackage to the index of the last non-negative integer
+                FirstPackage = Order[i]; // Update FirstPackage to the index of the last non-negative integer
                 return; // Exit the loop once the last non-negative integer is found
             }
         }
@@ -51,7 +51,7 @@ public class Route
         for (int i = getOrder().length - 1; i >= 0; i--) {
             if (getOrder()[i] >= 0)
             {
-                LastPackage = order[i]; // Update LastPackage to the index of the last non-negative integer
+                LastPackage = Order[i]; // Update LastPackage to the index of the last non-negative integer
                 return; // Exit the loop once the last non-negative integer is found
             }
         }
@@ -62,10 +62,10 @@ public class Route
 
     public int[] getOrder()
     {
-        return order;
+        return Order;
     }
 
-    public int getTotalDistance()
+    public float getTotalDistance()
     {
         return totalDistance;
     }
@@ -73,7 +73,7 @@ public class Route
     public int getLength()
     {
         int length = 0;
-        for (int i : order)
+        for (int i : Order)
         {
             if (i > -1)
             {
@@ -110,7 +110,7 @@ public class Route
     }
 
     // Calculate the total distance of the route
-    public void calculateTotalDistance(int[][] distances, int[][] coordinates)
+    public void calculateTotalDistance(float[][] distances, int[][] coordinates)
     {
         int distance = 0;
         GetLastPackage();
@@ -132,20 +132,20 @@ public class Route
             int[] EndCoordinates = Depot;
         }
 
-        for (int i = 0; i < order.length - 1;)
+        for (int i = 0; i < Order.length - 1;)
         {
-            while(i < order.length && order[i] == -1)
+            while(i < Order.length && Order[i] == -1)
             {
                  i += 1;
             }
              j = i + 1;
-            while (j < order.length && order[j] == -1)
+            while (j < Order.length && Order[j] == -1)
             {
                 j += 1;
             }
-            if (i < order.length && j < order.length && order[i] != -1 && order[j] != -1)
+            if (i < Order.length && j < Order.length && Order[i] != -1 && Order[j] != -1)
             {
-                distance += distances[order[i]][order[j]];
+                distance += distances[Order[i]][Order[j]];
             }
             i++;
         }
@@ -178,6 +178,7 @@ public class Route
 
         totalDistance = distance;
     }*/
+
     private static int distanceCalculator(int[] a, int[] b)
     {
         double xval = a[0] - b[0];
