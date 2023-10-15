@@ -152,6 +152,32 @@ public class Route
         totalDistance = distance;
     }
 
+    /*public void calculateTotalDistance(int[][] distances, int[][] coordinates)
+    {
+        int distance = 0;
+        GetLastPackage();
+        GetFirstPackage();
+        int currentPackage = FirstPackage;
+        int nextPackage;
+
+        int i = 0;
+        while (i < Order.length - 1) //Until end of package order array
+        {
+            nextPackage = Order[i];
+            //System.out.println("index: " + i + "\nCurrent package: " + currentPackage + "\nNext Package: " + nextPackage);
+            if (nextPackage != -1)
+            {
+                //System.out.println("Found Next Package: " + nextPackage);
+                distance += distances[currentPackage][nextPackage];
+                currentPackage = nextPackage;
+            }
+            i++;
+        }
+        distance += calculateFirstDistance(coordinates);
+        distance += calculateLastDistance(coordinates);
+
+        totalDistance = distance;
+    }*/
     private static int distanceCalculator(int[] a, int[] b)
     {
         double xval = a[0] - b[0];
