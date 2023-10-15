@@ -11,50 +11,34 @@ import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+
+import javax.swing.*;
 import java.lang.Math;
 
 public class MasterAgent extends Agent
 {
-
-    public int MutationRate; // A number x such that the mutation rate (as a decimal) = 1/x
     public RouteGroup[] Population; // The population for the GA
     public int TotalDrivers; // A number so that the MA knows whether it has found all delivery agents, initalised through user input
-    public int PopulationSize; // The population size for the GA
-    public int Iterations; // The number of generations for the GA
     public int[][] Distances; // Distances[x][y] corresponds to the distance between package x and y
     public int[][] Coordinates; // Coordinates[1] refers to a coordinate array for package1: [x,y]
     public int TotalPackages; // The total number of packages
-    private AID[] Agents; // Stores all the DA agents
+    private AID[] Agents; // Stores all the DA's
     public int[] Capacities; // Stores the capacities for each DA
     private int[] DistanceRestraints; // Stores the distance restraint for each DA
-
-    private RouteGroup Solution;
-
-
-    private int step;
+    private RouteGroup Solution; // The final solution from the GA
+    private int step; // Represents stage of conversation with DA's
     private MasterAgent Master;
 
     protected void setup()
     {
         processData(); // Reads data from text file input
         step = 0;
-        Master = this; // This is fucked because if you call this later on it doesn't work because it's in a private class
+        Master = this;
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
-        // Stores number of drivers to know when all delivery agents have been added
         System.out.println("Enter the total number of delivery drivers available");
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in); // Stores number of drivers to know when all delivery agents have been added
         TotalDrivers = scanner.nextInt();
         processData(); // Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
-//        SwingUtilities.invokeLater(() ->
-//        {
-//            JFrame frame = new JFrame("Coordinate Visualizer");
-//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//            frame.add(new CoordinateVisualizer(Coordinates, Routes)); // Pass your Coordinates[][] array
-//            frame.setSize(800, 600);
-//            frame.setLocationRelativeTo(null);
-//            frame.setVisible(true);
-//        });
-
         addBehaviour(new TickerBehaviour(this, 1000)
         {
             protected void onTick()
@@ -149,11 +133,9 @@ public class MasterAgent extends Agent
                     i = 0;
                     for (AID agent : Agents)
                     {
-                        // Creating an INFORM request for Delivery Agent to send Capacity
-                        ACLMessage msg = createMessage(agent, "Give me your Capacity");
+                        ACLMessage msg = createMessage(agent, "Give me your Capacity");  // Creates an INFORM request for Delivery Agent to send Capacity
                         send(msg);
-                        // Template to receive the reply
-                        MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+                        MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM); // Template to receive the reply
                         msg = blockingReceive(mt);
                         if (msg != null)
                         {
@@ -208,9 +190,9 @@ public class MasterAgent extends Agent
                             System.out.println("No reply received");
                         }
                     }
-                    if (i == DistanceRestraints.length) // if the number of replies = the expected number of replies
+                    if (i == DistanceRestraints.length) // If the number of replies = the expected number of replies
                     {
-                        step = 3; // move onto the next step
+                        step = 3; // Move onto the next step
                         i = 0;
                         while (i < DistanceRestraints.length)
                         {
@@ -220,17 +202,17 @@ public class MasterAgent extends Agent
                     }
                     break;
 
-                case 3: // Uses the GA to generate optimal routes for each DA then sends routes to driver
+                case 3: // Uses the GA to generate optimal routes for each DA, then sends routes to driver
                     System.out.println("Attempting to find solution");
                     GeneticAlgorithm GA = new GeneticAlgorithm(Master, 500, 10, 100);
-                    RouteGroup solution = GA.FindSolution(); // Calls FindSolution() which runs GA
+                    Solution = GA.FindSolution(); // Calls FindSolution() which runs GA
                     System.out.println("Found solution");
-                    solution.displayRouteGroup();
+                    Solution.displayRouteGroup();
                     // ** SEND ROUTES TO DRIVER ** //
                     for (int k = 0; k < Agents.length; k++)
                     {
                         String routeMessage = "Route:";
-                        for (int delivery : solution.Group[k].getOrder())
+                        for (int delivery : Solution.Group[k].getOrder())
                         {
                             routeMessage += " " + delivery;
                         }
@@ -239,13 +221,25 @@ public class MasterAgent extends Agent
                         send(msg);
 
                     }
-                    step = 4; // Agent conversation finish
+                    step = 4; // Move onto next step
                     break;
+                case 4:
+                    System.out.println("Displaying Routes");
+                    SwingUtilities.invokeLater(() ->
+                    {
+                        JFrame frame = new JFrame("Coordinate Visualizer");
+                        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        frame.add(new CoordinateVisualizer(Coordinates, Solution)); // Pass your Coordinates[][] array
+                        frame.setSize(800, 600);
+                        frame.setLocationRelativeTo(null);
+                        frame.setVisible(true);
+                    });
+                    step = 5; // Agent conversation is finished
             }
         }
         public boolean done()
         {
-            return step == 4;
+            return step == 5;
         }
     }
 
