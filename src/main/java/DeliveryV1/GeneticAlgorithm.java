@@ -91,7 +91,9 @@ public class GeneticAlgorithm
             int middleIndex1 = length / 2 - 1;
             int middleIndex2 = length / 2;
             return (sorted[middleIndex1] + sorted[middleIndex2]) / 2.0f;
-        } else {
+        }
+        else
+        {
             // If the length of the array is odd, return the middle value
             int middleIndex = length / 2;
             return sorted[middleIndex];
@@ -203,7 +205,9 @@ public class GeneticAlgorithm
     {
         List<RouteGroup> tournament = new ArrayList<>();
         float[] fitness = evaluateFitness(Master.Population, Master.TotalPackages);
-        while (tournament.size() < PopulationSize / 2 && getMedianFitness(fitness) != 1)
+        float average_fitness = getMedianFitness(fitness);
+        System.out.println("Äverage Fitness: " + average_fitness);
+        while (tournament.size() < PopulationSize / 2 && average_fitness != 1)
         {
             for (int i = 0; i < fitness.length; i++)
             {

@@ -57,15 +57,19 @@ public class CoordinateVisualizer extends JPanel {
                 int startX = centerX;
                 int startY = centerY;
 
-                for (int i = 0; i < route.getOrder().length; i++) {
-                    int endX = (int) (Coordinates[route.getOrder()[i]][0] * ScaleFactorX + centerX);
-                    int endY = (int) (-Coordinates[route.getOrder()[i]][1] * ScaleFactorY + centerY);
+                for (int i = 0; i < route.getOrder().length; i++)
+                {
+                    if (route.getOrder()[i] != -1)
+                    {
+                        int endX = (int) (Coordinates[route.getOrder()[i]][0] * ScaleFactorX + centerX);
+                        int endY = (int) (-Coordinates[route.getOrder()[i]][1] * ScaleFactorY + centerY);
 
-                    g.drawLine(startX, startY, endX, endY);
+                        g.drawLine(startX, startY, endX, endY);
 
-                    // Update start coordinates for the next line segment
-                    startX = endX;
-                    startY = endY;
+                        // Update start coordinates for the next line segment
+                        startX = endX;
+                        startY = endY;
+                    }
                 }
 
                 // Draw a line back to the base (centre)
