@@ -76,7 +76,8 @@ public class GeneticAlgorithm
         {
             int packagesDelivered = population[i].calculateTotalPackages();
             int totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
-            populationFitness[i] = (float) (packagesDelivered) - (float) (0.001 * totalDistance);
+            //populationFitness[i] = (float) (packagesDelivered) - (float) (0.001 * totalDistance);
+            populationFitness[i] = (float) packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
         }
         populationFitness = normalise(populationFitness);
         return populationFitness;
@@ -101,6 +102,15 @@ public class GeneticAlgorithm
         }
     }
 
+    private static float getMeanFitness(float[] a) {
+        float totalFitness = 0;
+        int length = a.length;
+        for(float i : a)
+        {
+            totalFitness += i;
+        }
+        return totalFitness/length;
+    }
 
     private static float[] normalise(float[] a)
     {
