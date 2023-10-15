@@ -157,19 +157,19 @@ public class GeneticAlgorithm
                 {
                     if (parent2.Group[i].getOrder()[j] != -1)
                     {
-                        if (!packageConsistency.contains(parent2.Group[i].getOrder()[j]))
+                        if (!packageConsistency.contains(parent2.Group[i].getOrder()[j])) // Ensure the package to be inherited has not been assigned
                         {
                             packageConsistency.add(parent2.Group[i].getOrder()[j]);
                             child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
                         }
                         else
                         {
-                            child.Group[i].getOrder()[j] = -1;
+                            child.Group[i].getOrder()[j] = -1; // Inherit nothing if parent package has already been assigned
                         }
                     }
                     else
                     {
-                        child.Group[i].getOrder()[j] = -1;
+                        child.Group[i].getOrder()[j] = -1; // Inherit null package from parent 2
                     }
                 }
             }
@@ -177,23 +177,27 @@ public class GeneticAlgorithm
         return child;
     }
 
-    // Mutation: Implement a simple swap mutation
+    // ** Mutation: Swaps two random packages ** //
     private RouteGroup swapMutation(RouteGroup solution)
     {
+        // Pick two random routes from the RouteGroup
         int randomRoute1 = (int) (Math.random() * solution.Group.length);
         int randomRoute2 = (int) (Math.random() * solution.Group.length);
+        // Pick a random package from each random route
         int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
         int randomPos2 = (int) (Math.random() * solution.Group[randomRoute2].getOrder().length);
-        int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1];
+        int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1]; // Store the original value
+        // Reassign values
         solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
         solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
         return solution;
     }
 
+    // CrossOver and Mutate: Combines swapMutation and Ordered Cross over using MutationRate
     public RouteGroup crossoverAndMutate(RouteGroup parent1, RouteGroup parent2)
     {
         RouteGroup child = orderedCrossover(parent1, parent2);
-        // 25% change of mutating
+        // ** Chance of mutation rate = 1/MutationRate ** //
         int mutation_chance = (int) (Math.random() * MutationRate);
         if (mutation_chance == 1)
         {
@@ -206,12 +210,11 @@ public class GeneticAlgorithm
         List<RouteGroup> tournament = new ArrayList<>();
         float[] fitness = evaluateFitness(Master.Population, Master.TotalPackages);
         float average_fitness = getMedianFitness(fitness);
-        System.out.println("Äverage Fitness: " + average_fitness);
         while (tournament.size() < PopulationSize / 2 && average_fitness != 1)
         {
             for (int i = 0; i < fitness.length; i++)
             {
-                if (fitness[i] > getMedianFitness(fitness))
+                if (fitness[i] > getMedianFitness(fitness)) //Ensures 50% of populations survives
                 {
                     tournament.add(Master.Population[i]);
                 }
@@ -224,12 +227,12 @@ public class GeneticAlgorithm
     {
         initialisePopulation();
         int iterationCount = 0;
+        // ** While max Iterations has not been reached and population has not converged ** //
         while (iterationCount < Iterations && getMedianFitness(evaluateFitness(Master.Population, Master.TotalPackages)) != 1)
         {
-            createNewGeneration(tournamentSelection());
+            createNewGeneration(tournamentSelection()); // Produce next Generation
             iterationCount += 1;
         }
-        float f = 0;
         int bestsolutionindex = 0;
         float bestfitness = 0;
         float [] fitness = evaluateFitness(Master.Population, Master.TotalPackages);
@@ -249,10 +252,10 @@ public class GeneticAlgorithm
         List<RouteGroup> newGeneration = new ArrayList<>();
         while (tournament.size() > 1)
         {
-            // ** Select random two parents from
+            // ** Select random two parents from tournament ** //
             int parent1 = (int) (Math.random() * tournament.size());
             int parent2 = (int) (Math.random() * tournament.size());
-            while (parent1 == parent2)
+            while (parent1 == parent2) // if parent1 and parent2 are the same, reassign parent 2
             {
                 parent2 = (int) (Math.random() * tournament.size());
             }
@@ -278,7 +281,7 @@ public class GeneticAlgorithm
             newGeneration.add(crossoverAndMutate(tournament.get(0), tournament.get(0)));
             newGeneration.add(crossoverAndMutate(tournament.get(0), tournament.get(0)));
         }
-        Master.Population = new RouteGroup[newGeneration.size()];
+        Master.Population = new RouteGroup[newGeneration.size()]; //Reassign population
         for (int i = 0; i < newGeneration.size(); i++)
         {
             Master.Population[i] = newGeneration.get(i);

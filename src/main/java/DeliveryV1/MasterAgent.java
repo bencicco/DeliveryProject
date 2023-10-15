@@ -27,18 +27,32 @@ public class MasterAgent extends Agent
     private int[] DistanceRestraints; // Stores the distance restraint for each DA
     private RouteGroup Solution; // The final solution from the GA
     private int step; // Represents stage of conversation with DA's
-    private MasterAgent Master;
+    private MasterAgent Master; // This Agent
 
     protected void setup()
     {
-        processData(); // Reads data from text file input
         step = 0;
         Master = this;
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
+        Scanner scanner = new Scanner(System.in);
+        boolean input = false;
+        while (input == false)
+        {
+            System.out.println("Would you like to load data from a text file? please type y for yes or n for no");
+            String Response = scanner.nextLine();
+            if (Response.equals("y"))
+            {
+                System.out.println("Please enter the name of the text file: ");
+                Response = scanner.nextLine();
+                processData(Response);
+                if (fileExists(Response))
+                {
+                    input = true;
+                }
+            }
+        }
         System.out.println("Enter the total number of delivery drivers available");
-        Scanner scanner = new Scanner(System.in); // Stores number of drivers to know when all delivery agents have been added
-        TotalDrivers = scanner.nextInt();
-        processData(); // Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
+        TotalDrivers = scanner.nextInt();  // Stores number of drivers to know when all delivery agents have been added
         addBehaviour(new TickerBehaviour(this, 1000)
         {
             protected void onTick()
@@ -251,41 +265,44 @@ public class MasterAgent extends Agent
         return msg;
     }
 
-    public void processData()
+    private boolean fileExists(String filename)
+    {
+        File file = new File(filename);
+        return file.exists() && !file.isDirectory();
+    }
+
+    public void processData(String filename) {
+        try {
+            readFile(filename); // Reads data entry from text file (test.txt) and adds to Coordinates
+            updateDistanceArray(); // Uses Coordinates to instantiate Distances
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + e.getMessage());
+        }
+    }
+
+    private void readFile(String fileName) throws FileNotFoundException
     {
         try
         {
-            readFile(); //Reads data entry from text file (test.txt) and adds to Coordinates
-            updateDistanceArray(); //Uses Coordinates to instantiate Distances
-
-        }
-        catch (FileNotFoundException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    private void readFile() throws FileNotFoundException
-    {
-        File file = new File("test.txt");
-        Scanner scanner = new Scanner(file);
-        TotalPackages = scanner.nextInt();  //First line of text file = total number of packages
-        Coordinates = new int[TotalPackages][2];
-        int i = 0;
-        while (scanner.hasNextLine()) //Following lines of text file have xy coordinates in the form x,y
-        {
-            String line = scanner.nextLine();
-            String[] values = line.split(","); // Split the line into two values using a comma as the delimiter
-            if (values.length == 2) // Ensure there are two values before trying to parse
-            {
-                Coordinates[i][0] = Integer.parseInt(values[0].trim()); // Parse and store the values
-                Coordinates[i][1] = Integer.parseInt(values[1].trim());
-                i += 1;
+            File file = new File(fileName);
+            Scanner scanner = new Scanner(file);
+            TotalPackages = scanner.nextInt();  // First line of the text file = total number of packages
+            Coordinates = new int[TotalPackages][2];
+            int i = 0;
+            while (scanner.hasNextLine()) { // Following lines of the text file have xy coordinates in the form x,y
+                String line = scanner.nextLine();
+                String[] values = line.split(","); // Split the line into two values using a comma as the delimiter
+                if (values.length == 2) { // Ensure there are two values before trying to parse
+                    Coordinates[i][0] = Integer.parseInt(values[0].trim()); // Parse and store the values
+                    Coordinates[i][1] = Integer.parseInt(values[1].trim());
+                    i += 1;
+                }
             }
+        } catch (FileNotFoundException e) {
+            throw e; // Re-throw the exception if the file is not found.
         }
-
     }
+
     private void updateDistanceArray()
     {
         Distances = new int[TotalPackages][TotalPackages];
