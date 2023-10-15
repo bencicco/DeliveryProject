@@ -42,23 +42,43 @@ public class GeneticAlgorithm
         // Phase two: Assign random packages to each 'null' route
         for (RouteGroup solution : population)
         {
+            int timeout = 0; // Timeout to prevent being stuck in loop of attempting to assign new package with no valid routes (all full, etc.)
             List<Integer> packages = new ArrayList<>();
             for (int i = 0; i < Master.TotalPackages; i++)
             {
                 packages.add(i);
             }
             Random random = new Random();
-
-            while (!packages.isEmpty())
+            //System.out.println("-----------BEGIN ASSIGNING NEXT GROUP-------------");
+            while (!packages.isEmpty() && timeout < Master.TotalPackages * 20)
             {
+                //System.out.println("ASSIGNING NEXT PACKAGE!!");
                 // Generate a random index within the range of available packages
                 int randomIndex = random.nextInt(packages.size());
                 int randomPackage = packages.get(randomIndex);
                 int randomRoute = random.nextInt(Master.TotalDrivers);
-                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length);
-                solution.Group[randomRoute].getOrder()[randomOrder] = randomPackage;
-                packages.remove(randomIndex);
+                Route selectedRoute = solution.Group[randomRoute];
+                int randomOrder = random.nextInt(selectedRoute.getOrder().length);
+
+                //System.out.println("Current group distance: " + selectedRoute.totalDistance);
+                // Add random package to selected random route and recalculate distance.
+                selectedRoute.AddPackage(randomPackage, randomOrder);
+                selectedRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
+                //System.out.println("New distance: " + selectedRoute.totalDistance);
+                if (selectedRoute.totalDistance > Master.DistanceRestraints[randomRoute]) // If new distance exceeds distance restraints
+                {
+                    //System.out.println("Distance exceeds restraints! REVERTING CHANGES!");
+                    selectedRoute.UndoPackage();
+                    selectedRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
+                }
+                else
+                {
+                    //System.out.println("Final distance for group is: " + selectedRoute.totalDistance);
+                    packages.remove(randomIndex);
+                }
+                timeout++;
             }
+            //System.out.println("Finished assigning packages for group");
         }
         Master.Population = population;
         return population;
@@ -70,7 +90,7 @@ public class GeneticAlgorithm
         float routegroupAverageDistance = 0;
         for (RouteGroup routegroup : population)
         {
-            routegroupAverageDistance += routegroup.GetTotalDistance() / totalPackages;
+            routegroupAverageDistance += (float) routegroup.GetTotalDistance() / totalPackages;
         }
         for (int i = 0; i < population.length; i++)
         {
