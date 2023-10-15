@@ -5,10 +5,15 @@ import jade.core.behaviours.CyclicBehaviour;
 import jade.lang.acl.ACLMessage;
 
 public class DeliveryAgent extends Agent {
+
+    DeliveryAgent thisAgent = this;
     private int Capacity;
     private int MaxDistance;
     private DeliveryAgentGUI GUI;
-    protected void setup() {
+    private Route route;
+    protected void setup()
+    {
+        route = new Route(new int[Capacity], 0);
         // Create and show the GUI
         GUI = new DeliveryAgentGUI(this);
         GUI.showGUI();
@@ -45,11 +50,31 @@ public class DeliveryAgent extends Agent {
                         send(reply);
                     }
 
+                    else if (content.startsWith("Route:")) {
+                        // Extract the route information from the message content
+                        String routeInfo = content.substring("Route:".length()).trim();
+                        String[] packageOrders = routeInfo.split(" ");
+
+                        // Create an array to store the package order
+                        int[] packageOrder = new int[packageOrders.length];
+
+                        // Parse the package order
+                        for (int i = 0; i < packageOrders.length; i++) {
+                            packageOrder[i] = Integer.parseInt(packageOrders[i]);
+                        }
+
+                        // Create a new Route object
+                        Route newRoute = new Route(packageOrder, 0);
+
+                        // Now you have the new Route object, you can use it as needed
+                        route = newRoute;
+                    }
                 }
                 else
                 {
                     block();
                 }
+
             }
         });
     }
