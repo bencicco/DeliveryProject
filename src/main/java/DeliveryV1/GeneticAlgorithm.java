@@ -60,20 +60,8 @@ public class GeneticAlgorithm
                 Route selectedRoute = solution.Group[randomRoute];
                 int randomOrder = random.nextInt(selectedRoute.getOrder().length);
 
-                //System.out.println("Current group distance: " + selectedRoute.totalDistance);
-                // Add random package to selected random route and recalculate distance.
-                selectedRoute.AddPackage(randomPackage, randomOrder);
-                selectedRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
-                //System.out.println("New distance: " + selectedRoute.totalDistance);
-                if (selectedRoute.totalDistance > Master.DistanceRestraints[randomRoute]) // If new distance exceeds distance restraints
+                if (AssignPackageIfValid(selectedRoute, randomPackage, randomOrder))
                 {
-                    //System.out.println("Distance exceeds restraints! REVERTING CHANGES!");
-                    selectedRoute.UndoPackage();
-                    selectedRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
-                }
-                else
-                {
-                    //System.out.println("Final distance for group is: " + selectedRoute.totalDistance);
                     packages.remove(randomIndex);
                 }
                 timeout++;
@@ -222,9 +210,9 @@ public class GeneticAlgorithm
     public RouteGroup crossoverAndMutate(RouteGroup parent1, RouteGroup parent2)
     {
         RouteGroup child = orderedCrossover(parent1, parent2);
-        // 25% change of mutating
+        // 25% change of mutating //MutationRate = 10, mutation_chance = (0-1) * 10 = 10%
         int mutation_chance = (int) (Math.random() * MutationRate);
-        if (mutation_chance == 1)
+        if (mutation_chance == 1) // typo? >=
         {
             child = swapMutation(child);
         }
@@ -307,6 +295,27 @@ public class GeneticAlgorithm
         for (int i = 0; i < newGeneration.size(); i++)
         {
             Master.Population[i] = newGeneration.get(i);
+        }
+    }
+
+    private boolean AssignPackageIfValid(Route route, int packageID, int packageOrder)
+    {
+        //System.out.println("Current group distance: " + route.totalDistance);
+        // Add random package to selected random route and recalculate distance.
+        route.AddPackage(packageID, packageOrder);
+        route.calculateTotalDistance(Master.Distances, Master.Coordinates);
+        //System.out.println("New distance: " + route.totalDistance);
+        if (route.totalDistance > Master.DistanceRestraints[packageOrder]) // If new distance exceeds distance restraints
+        {
+            //System.out.println("Distance exceeds restraints! REVERTING CHANGES!");
+            route.UndoPackage();
+            route.calculateTotalDistance(Master.Distances, Master.Coordinates);
+            return false;
+        }
+        else
+        {
+            //System.out.println("Final distance for group is: " + route.totalDistance);
+            return true;
         }
     }
 }
