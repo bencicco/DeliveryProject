@@ -222,7 +222,11 @@ public class MasterAgent extends Agent
 
                 case 3: // Uses the GA to generate optimal routes for each DA then sends routes to driver
                     System.out.println("Attempting to find solution");
-                    GeneticAlgorithm GA = new GeneticAlgorithm(Master, 500, 10, 100);
+                    //Set GA parameters to default values if not assigned
+                    if(PopulationSize == 0) {PopulationSize = 500;}
+                    if(MutationRate == 0) {MutationRate = 10;}
+                    if(Iterations == 0) {Iterations = 100;}
+                    GeneticAlgorithm GA = new GeneticAlgorithm(Master, PopulationSize, MutationRate, Iterations);
                     RouteGroup solution = GA.FindSolution(); // Calls FindSolution() which runs GA
                     System.out.println("Found solution");
                     solution.displayRouteGroup();
