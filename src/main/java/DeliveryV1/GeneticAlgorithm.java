@@ -203,6 +203,7 @@ public class GeneticAlgorithm
     // Mutation: Implement a simple swap mutation
     private RouteGroup swapMutation(RouteGroup solution)
     {
+        //TODO: Implement distance restraints & test
         int randomRoute1 = (int) (Math.random() * solution.Group.length);
         int randomRoute2 = (int) (Math.random() * solution.Group.length);
         int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
@@ -306,12 +307,10 @@ public class GeneticAlgorithm
 
     private boolean PackageIsValid(Route route, int routeID, int packageID, int packageOrder)
     {
-        //TODO: Clone route & perform calculations on cloned route. Perform assignments outside of function.
         int[] copy = Arrays.copyOf(route.getOrder(), route.getOrder().length);
         Route testRoute = new Route(copy, route.getTotalDistance());
-
         //System.out.println("Current group distance: " + route.totalDistance);
-        // Add random package to selected random route and recalculate distance.
+        // Add random package to copied random route and recalculate distance.
         testRoute.AddPackage(packageID, packageOrder);
         testRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
         //System.out.println("New distance: " + route.totalDistance);
