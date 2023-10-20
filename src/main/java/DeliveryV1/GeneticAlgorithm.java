@@ -57,10 +57,9 @@ public class GeneticAlgorithm
                 int randomIndex = random.nextInt(packages.size());
                 int randomPackage = packages.get(randomIndex);
                 int randomRoute = random.nextInt(Master.TotalDrivers);
-                Route selectedRoute = solution.Group[randomRoute];
-                int randomOrder = random.nextInt(selectedRoute.getOrder().length);
+                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length);
 
-                if (AssignPackageIfValid(selectedRoute, randomPackage, randomOrder))
+                if (PackageIsValid(solution.Group[randomRoute], randomRoute, randomPackage, randomOrder))
                 {
                     packages.remove(randomIndex);
                 }
@@ -147,48 +146,52 @@ public class GeneticAlgorithm
         List<Integer> packageConsistency = new ArrayList<>();
         for (int i = 0; i < child.Group.length; i++)
         {
-            int StartPackage = (int) (Math.random() * child.Group[i].getOrder().length);
-            int randomEnd = (int) (Math.random() * (child.Group[i].getOrder().length) - StartPackage);
-            int EndPackage = child.Group[i].getOrder().length - randomEnd;
-            for (int j = 0; j < child.Group[i].getOrder().length; j++)
+            boolean validChild = false;
+            int maxTries = 50;
+            int c = 0;
+            while (c < maxTries && !validChild) {
+                int StartPackage = (int) (Math.random() * child.Group[i].getOrder().length);
+                int randomEnd = (int) (Math.random() * (child.Group[i].getOrder().length) - StartPackage);
+                int EndPackage = child.Group[i].getOrder().length - randomEnd;
+                for (int j = 0; j < child.Group[i].getOrder().length; j++) {
+                    if (j >= StartPackage && j <= EndPackage) {
+                        if (parent1.Group[i].getOrder()[j] != -1) {
+                            if (!packageConsistency.contains(parent1.Group[i].getOrder()[j])) {
+                                packageConsistency.add(parent1.Group[i].getOrder()[j]);
+                                child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
+                            } else {
+                                child.Group[i].getOrder()[j] = -1;
+                            }
+                        } else {
+                            child.Group[i].getOrder()[j] = -1;
+                        }
+                    } else if (j < StartPackage || j > EndPackage) {
+                        if (parent2.Group[i].getOrder()[j] != -1) {
+                            if (!packageConsistency.contains(parent2.Group[i].getOrder()[j])) {
+                                packageConsistency.add(parent2.Group[i].getOrder()[j]);
+                                child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
+                            } else {
+                                child.Group[i].getOrder()[j] = -1;
+                            }
+                        } else {
+                            child.Group[i].getOrder()[j] = -1;
+                        }
+                    }
+                }
+                child.Group[i].calculateTotalDistance(Master.Distances, Master.Coordinates);
+                if(child.Group[i].totalDistance <= Master.DistanceRestraints[i])
+                {
+                    validChild = true;
+                }
+                else
+                {
+                    c++;
+                }
+            }
+            if(!validChild)
             {
-                if (j >= StartPackage && j <= EndPackage)
-                {
-                    if(parent1.Group[i].getOrder()[j] != -1)
-                    {
-                        if (!packageConsistency.contains(parent1.Group[i].getOrder()[j])) {
-                            packageConsistency.add(parent1.Group[i].getOrder()[j]);
-                            child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];
-                        }
-                        else
-                        {
-                            child.Group[i].getOrder()[j] = -1;
-                        }
-                    }
-                    else
-                    {
-                        child.Group[i].getOrder()[j] = -1;
-                    }
-                }
-                else if (j < StartPackage || j > EndPackage)
-                {
-                    if(parent2.Group[i].getOrder()[j] != -1)
-                    {
-                        if (!packageConsistency.contains(parent2.Group[i].getOrder()[j]))
-                        {
-                            packageConsistency.add(parent2.Group[i].getOrder()[j]);
-                            child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
-                        }
-                        else
-                        {
-                            child.Group[i].getOrder()[j] = -1;
-                        }
-                    }
-                    else
-                    {
-                        child.Group[i].getOrder()[j] = -1;
-                    }
-                }
+                System.out.println("Failed to produce child in ordered crossover: inheriting parent values.");
+                child.Group[i] = parent1.Group[i];
             }
         }
         return child;
