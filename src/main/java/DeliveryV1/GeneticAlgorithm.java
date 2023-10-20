@@ -57,10 +57,13 @@ public class GeneticAlgorithm
                 int randomIndex = random.nextInt(packages.size());
                 int randomPackage = packages.get(randomIndex);
                 int randomRoute = random.nextInt(Master.TotalDrivers);
-                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length);
+                Route selectedRoute = solution.Group[randomRoute];
+                int randomOrder = random.nextInt(selectedRoute.getOrder().length);
 
-                if (PackageIsValid(solution.Group[randomRoute], randomRoute, randomPackage, randomOrder))
+                if (PackageIsValid(selectedRoute, randomRoute, randomPackage, randomOrder))
                 {
+                    selectedRoute.AddPackage(randomPackage, randomOrder);
+                    selectedRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
                     packages.remove(randomIndex);
                 }
                 timeout++;
@@ -301,23 +304,25 @@ public class GeneticAlgorithm
         }
     }
 
-    private boolean AssignPackageIfValid(Route route, int packageID, int packageOrder)
+    private boolean PackageIsValid(Route route, int routeID, int packageID, int packageOrder)
     {
+        //TODO: Clone route & perform calculations on cloned route. Perform assignments outside of function.
+        int[] copy = Arrays.copyOf(route.getOrder(), route.getOrder().length);
+        Route testRoute = new Route(copy, route.getTotalDistance());
+
         //System.out.println("Current group distance: " + route.totalDistance);
         // Add random package to selected random route and recalculate distance.
-        route.AddPackage(packageID, packageOrder);
-        route.calculateTotalDistance(Master.Distances, Master.Coordinates);
+        testRoute.AddPackage(packageID, packageOrder);
+        testRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
         //System.out.println("New distance: " + route.totalDistance);
-        if (route.totalDistance > Master.DistanceRestraints[packageOrder]) // If new distance exceeds distance restraints
+        if (testRoute.totalDistance <= Master.DistanceRestraints[routeID]) // If new distance exceeds distance restraints
         {
-            //System.out.println("Distance exceeds restraints! REVERTING CHANGES!");
-            route.UndoPackage();
-            route.calculateTotalDistance(Master.Distances, Master.Coordinates);
+            //System.out.println("Distance exceeds restraints!");
             return false;
         }
         else
         {
-            //System.out.println("Final distance for group is: " + route.totalDistance);
+            //System.out.println("Final distance for group is: " + testRoute.totalDistance);
             return true;
         }
     }
