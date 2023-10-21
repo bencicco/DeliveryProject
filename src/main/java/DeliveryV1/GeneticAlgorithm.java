@@ -128,11 +128,13 @@ public class GeneticAlgorithm
         float[] sorted = a.clone();
         Arrays.sort(sorted);
 
-        float minVal = sorted[0];
-        float maxVal = sorted[sorted.length - 1];
-        for (int i = 0; i < a.length; i++)
+        if(sorted.length > 0)
         {
-            result[i] = (a[i] - minVal) / (maxVal - minVal);
+            float minVal = sorted[0];
+            float maxVal = sorted[sorted.length - 1];
+            for (int i = 0; i < a.length; i++) {
+                result[i] = (a[i] - minVal) / (maxVal - minVal);
+            }
         }
         return result;
     }
