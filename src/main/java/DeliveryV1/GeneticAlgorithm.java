@@ -150,9 +150,9 @@ public class GeneticAlgorithm
         for (int i = 0; i < child.Group.length; i++)
         {
             boolean validChild = false;
-            int maxTries = 50;
-            int c = 0;
-            while (c < maxTries && !validChild) {
+            int maxIterations = 50;
+            int iterations = 0;
+            while (iterations < maxIterations && !validChild) {
                 int StartPackage = (int) (Math.random() * child.Group[i].getOrder().length);
                 int randomEnd = (int) (Math.random() * (child.Group[i].getOrder().length) - StartPackage);
                 int EndPackage = child.Group[i].getOrder().length - randomEnd;
@@ -188,7 +188,7 @@ public class GeneticAlgorithm
                 }
                 else
                 {
-                    c++;
+                    iterations++;
                 }
             }
             if(!validChild)
@@ -203,14 +203,27 @@ public class GeneticAlgorithm
     // Mutation: Implement a simple swap mutation
     private RouteGroup swapMutation(RouteGroup solution)
     {
-        //TODO: Implement distance restraints & test
-        int randomRoute1 = (int) (Math.random() * solution.Group.length);
-        int randomRoute2 = (int) (Math.random() * solution.Group.length);
-        int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
-        int randomPos2 = (int) (Math.random() * solution.Group[randomRoute2].getOrder().length);
-        int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1];
-        solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
-        solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
+        boolean validMutation = false;
+        int maxIterations = 50;
+        int iterations = 0;
+        while (iterations < maxIterations && !validMutation)
+        {
+            int randomRoute1 = (int) (Math.random() * solution.Group.length);
+            int randomRoute2 = (int) (Math.random() * solution.Group.length);
+            int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
+            int randomPos2 = (int) (Math.random() * solution.Group[randomRoute2].getOrder().length);
+            if(PackageIsValid(solution.Group[randomRoute1], randomRoute1, solution.Group[randomRoute2].getOrder()[randomPos2], randomPos1) && PackageIsValid(solution.Group[randomRoute2], randomRoute2, solution.Group[randomRoute1].getOrder()[randomPos1], randomPos2))
+            {
+                int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1];
+                solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
+                solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
+                validMutation = true;
+            }
+            else
+            {
+                iterations++;
+            }
+        }
         return solution;
     }
 
