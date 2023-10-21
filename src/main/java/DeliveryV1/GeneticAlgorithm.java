@@ -260,6 +260,17 @@ public class GeneticAlgorithm
     public RouteGroup FindSolution()
     {
         initialisePopulation();
+        //print population for debug
+        /*
+        for (RouteGroup individual: Master.Population)
+        {
+            for (Route driver: individual.Group)
+            {
+                System.out.println(Arrays.toString(driver.getOrder()));
+            }
+        }
+        */
+        
         int iterationCount = 0;
         while (iterationCount < Iterations && getMedianFitness(evaluateFitness(Master.Population, Master.TotalPackages)) != 1)
         {
