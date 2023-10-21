@@ -20,13 +20,14 @@ public class MasterAgent extends Agent
     public RouteGroup[] Population; // The population for the GA
     public int TotalDrivers; // A number so that the MA knows whether it has found all delivery agents, initalised through user input
     public int PopulationSize; // The population size for the GA
+    public int MutationRate; // The mutation rate for the GA
     public int Iterations; // The number of generations for the GA
     public float[][] Distances; // Distances[x][y] corresponds to the distance between package x and y
     public int[][] Coordinates; // Coordinates[1] refers to a coordinate array for package1: [x,y]
     public int TotalPackages; // The total number of packages
     private AID[] Agents; // Stores all the DA's
     public int[] Capacities; // Stores the capacities for each DA
-    private int[] DistanceRestraints; // Stores the distance restraint for each DA
+    public int[] DistanceRestraints; // Stores the distance restraint for each DA
     private RouteGroup Solution; // The final solution from the GA
     private int step; // Represents stage of conversation with DA's
     private MasterAgent Master; // This Agent
