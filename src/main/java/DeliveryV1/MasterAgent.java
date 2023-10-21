@@ -11,12 +11,12 @@ import jade.domain.FIPAAgentManagement.AMSAgentDescription;
 import jade.domain.FIPAAgentManagement.SearchConstraints;
 import jade.lang.acl.ACLMessage;
 import jade.lang.acl.MessageTemplate;
+
+import javax.swing.*;
 import java.lang.Math;
 
 public class MasterAgent extends Agent
 {
-
-    public int MutationRate; // A number x such that the mutation rate (as a decimal) = 1/x
     public RouteGroup[] Population; // The population for the GA
     public int TotalDrivers; // A number so that the MA knows whether it has found all delivery agents, initalised through user input
     public int PopulationSize; // The population size for the GA
@@ -24,37 +24,51 @@ public class MasterAgent extends Agent
     public float[][] Distances; // Distances[x][y] corresponds to the distance between package x and y
     public int[][] Coordinates; // Coordinates[1] refers to a coordinate array for package1: [x,y]
     public int TotalPackages; // The total number of packages
-    private AID[] Agents; // Stores all the DA agents
+    private AID[] Agents; // Stores all the DA's
     public int[] Capacities; // Stores the capacities for each DA
-    public int[] DistanceRestraints; // Stores the distance restraint for each DA
-
-    private RouteGroup Solution;
-
-
-    private int step;
-    private MasterAgent Master;
+    private int[] DistanceRestraints; // Stores the distance restraint for each DA
+    private RouteGroup Solution; // The final solution from the GA
+    private int step; // Represents stage of conversation with DA's
+    private MasterAgent Master; // This Agent
 
     protected void setup()
     {
-        processData(); // Reads data from text file input
         step = 0;
-        Master = this; // This is fucked because if you call this later on it doesn't work because it's in a private class
+        Master = this;
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
-        // Stores number of drivers to know when all delivery agents have been added
-        System.out.println("Enter the total number of delivery drivers available");
         Scanner scanner = new Scanner(System.in);
-        TotalDrivers = scanner.nextInt();
-        processData(); // Reads input from test.txt and instantiates Distances,Coordinates and TotalPackages
-//        SwingUtilities.invokeLater(() ->
-//        {
-//            JFrame frame = new JFrame("Coordinate Visualizer");
-//            frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-//            frame.add(new CoordinateVisualizer(Coordinates, Routes)); // Pass your Coordinates[][] array
-//            frame.setSize(800, 600);
-//            frame.setLocationRelativeTo(null);
-//            frame.setVisible(true);
-//        });
-
+        boolean input = false;
+        while (input == false)
+        {
+            System.out.println("Would you like to load data from a text file? please type y for yes or n for no");
+            String Response = scanner.nextLine();
+            if (Response.equals("y"))
+            {
+                System.out.println("Please enter the name of the text file: ");
+                Response = scanner.nextLine();
+                processData(Response);
+                if (fileExists(Response))
+                {
+                    input = true;
+                }
+            }
+            if (Response.equals("n"))
+            {
+                System.out.println("Please enter the total amount of packages you wish to be delivered: ");
+                TotalPackages = scanner.nextInt();
+                Coordinates = new int[TotalPackages][2];
+                Random random = new Random();
+                for (int[] delivery : Coordinates)
+                {
+                    delivery[0] = random.nextInt(201) - 100;  // Generates a random number between -100 and 100
+                    delivery[1] = random.nextInt(201) - 100;  // Generates a random number between -100 and 100
+                }
+                updateDistanceArray();
+                input = true;
+            }
+        }
+        System.out.println("Enter the total number of delivery drivers available");
+        TotalDrivers = scanner.nextInt();  // Stores number of drivers to know when all delivery agents have been added
         addBehaviour(new TickerBehaviour(this, 1000)
         {
             protected void onTick()
@@ -149,11 +163,9 @@ public class MasterAgent extends Agent
                     i = 0;
                     for (AID agent : Agents)
                     {
-                        // Creating an INFORM request for Delivery Agent to send Capacity
-                        ACLMessage msg = createMessage(agent, "Give me your Capacity");
+                        ACLMessage msg = createMessage(agent, "Give me your Capacity");  // Creates an INFORM request for Delivery Agent to send Capacity
                         send(msg);
-                        // Template to receive the reply
-                        MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM);
+                        MessageTemplate mt = MessageTemplate.MatchPerformative(ACLMessage.INFORM); // Template to receive the reply
                         msg = blockingReceive(mt);
                         if (msg != null)
                         {
@@ -208,9 +220,9 @@ public class MasterAgent extends Agent
                             System.out.println("No reply received");
                         }
                     }
-                    if (i == DistanceRestraints.length) // if the number of replies = the expected number of replies
+                    if (i == DistanceRestraints.length) // If the number of replies = the expected number of replies
                     {
-                        step = 3; // move onto the next step
+                        step = 3; // Move onto the next step
                         i = 0;
                         while (i < DistanceRestraints.length)
                         {
@@ -220,7 +232,7 @@ public class MasterAgent extends Agent
                     }
                     break;
 
-                case 3: // Uses the GA to generate optimal routes for each DA then sends routes to driver
+                case 3: // Uses the GA to generate optimal routes for each DA, then sends routes to driver
                     System.out.println("Attempting to find solution");
                     //Set GA parameters to default values if not assigned
                     if(PopulationSize == 0) {PopulationSize = 500;}
@@ -229,12 +241,12 @@ public class MasterAgent extends Agent
                     GeneticAlgorithm GA = new GeneticAlgorithm(Master, PopulationSize, MutationRate, Iterations);
                     RouteGroup solution = GA.FindSolution(); // Calls FindSolution() which runs GA
                     System.out.println("Found solution");
-                    solution.displayRouteGroup();
+                    Solution.displayRouteGroup();
                     // ** SEND ROUTES TO DRIVER ** //
                     for (int k = 0; k < Agents.length; k++)
                     {
                         String routeMessage = "Route:";
-                        for (int delivery : solution.Group[k].getOrder())
+                        for (int delivery : Solution.Group[k].getOrder())
                         {
                             routeMessage += " " + delivery;
                         }
@@ -243,13 +255,25 @@ public class MasterAgent extends Agent
                         send(msg);
 
                     }
-                    step = 4; // Agent conversation finish
+                    step = 4; // Move onto next step
                     break;
+                case 4:
+                    System.out.println("Displaying Routes");
+                    SwingUtilities.invokeLater(() ->
+                    {
+                        JFrame frame = new JFrame("Coordinate Visualizer");
+                        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                        frame.add(new CoordinateVisualizer(Coordinates, Solution)); // Pass your Coordinates[][] array
+                        frame.setSize(800, 600);
+                        frame.setLocationRelativeTo(null);
+                        frame.setVisible(true);
+                    });
+                    step = 5; // Agent conversation is finished
             }
         }
         public boolean done()
         {
-            return step == 4;
+            return step == 5;
         }
     }
 
@@ -261,41 +285,44 @@ public class MasterAgent extends Agent
         return msg;
     }
 
-    public void processData()
+    private boolean fileExists(String filename)
+    {
+        File file = new File(filename);
+        return file.exists() && !file.isDirectory();
+    }
+
+    public void processData(String filename) {
+        try {
+            readFile(filename); // Reads data entry from text file (test.txt) and adds to Coordinates
+            updateDistanceArray(); // Uses Coordinates to instantiate Distances
+        } catch (FileNotFoundException e) {
+            System.err.println("File not found: " + e.getMessage());
+        }
+    }
+
+    private void readFile(String fileName) throws FileNotFoundException
     {
         try
         {
-            readFile(); //Reads data entry from text file (test.txt) and adds to Coordinates
-            updateDistanceArray(); //Uses Coordinates to instantiate Distances
-
-        }
-        catch (FileNotFoundException e)
-        {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    private void readFile() throws FileNotFoundException
-    {
-        File file = new File("test.txt");
-        Scanner scanner = new Scanner(file);
-        TotalPackages = scanner.nextInt();  //First line of text file = total number of packages
-        Coordinates = new int[TotalPackages][2];
-        int i = 0;
-        while (scanner.hasNextLine()) //Following lines of text file have xy coordinates in the form x,y
-        {
-            String line = scanner.nextLine();
-            String[] values = line.split(","); // Split the line into two values using a comma as the delimiter
-            if (values.length == 2) // Ensure there are two values before trying to parse
-            {
-                Coordinates[i][0] = Integer.parseInt(values[0].trim()); // Parse and store the values
-                Coordinates[i][1] = Integer.parseInt(values[1].trim());
-                i += 1;
+            File file = new File(fileName);
+            Scanner scanner = new Scanner(file);
+            TotalPackages = scanner.nextInt();  // First line of the text file = total number of packages
+            Coordinates = new int[TotalPackages][2];
+            int i = 0;
+            while (scanner.hasNextLine()) { // Following lines of the text file have xy coordinates in the form x,y
+                String line = scanner.nextLine();
+                String[] values = line.split(","); // Split the line into two values using a comma as the delimiter
+                if (values.length == 2) { // Ensure there are two values before trying to parse
+                    Coordinates[i][0] = Integer.parseInt(values[0].trim()); // Parse and store the values
+                    Coordinates[i][1] = Integer.parseInt(values[1].trim());
+                    i += 1;
+                }
             }
+        } catch (FileNotFoundException e) {
+            throw e; // Re-throw the exception if the file is not found.
         }
-
     }
+
     private void updateDistanceArray()
     {
         Distances = new float[TotalPackages][TotalPackages];
