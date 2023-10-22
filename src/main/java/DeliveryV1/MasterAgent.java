@@ -33,40 +33,7 @@ public class MasterAgent extends Agent
     {
         step = 0;
         Master = this;
-        System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
-        Scanner scanner = new Scanner(System.in);
-        boolean input = false;
-        while (input == false)
-        {
-            System.out.println("Would you like to load data from a text file? please type y for yes or n for no");
-            String Response = scanner.nextLine();
-            if (Response.equals("y"))
-            {
-                System.out.println("Please enter the name of the text file: ");
-                Response = scanner.nextLine();
-                processData(Response);
-                if (fileExists(Response))
-                {
-                    input = true;
-                }
-            }
-            if (Response.equals("n"))
-            {
-                System.out.println("Please enter the total amount of packages you wish to be delivered: ");
-                TotalPackages = scanner.nextInt();
-                Coordinates = new int[TotalPackages][2];
-                Random random = new Random();
-                for (int[] delivery : Coordinates)
-                {
-                    delivery[0] = random.nextInt(201) - 100;  // Generates a random number between -100 and 100
-                    delivery[1] = random.nextInt(201) - 100;  // Generates a random number between -100 and 100
-                }
-                updateDistanceArray();
-                input = true;
-            }
-        }
-        System.out.println("Enter the total number of delivery drivers available");
-        TotalDrivers = scanner.nextInt();  // Stores number of drivers to know when all delivery agents have been added
+        userInputAndOutput();
         addBehaviour(new TickerBehaviour(this, 1000)
         {
             protected void onTick()
@@ -269,6 +236,65 @@ public class MasterAgent extends Agent
         {
             return step == 5;
         }
+    }
+
+    private void userInputAndOutput()
+    {
+        System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
+        Scanner scanner = new Scanner(System.in);
+        boolean input = false;
+        while (input == false)
+        {
+            System.out.println("Would you like to load data from a text file? please type y for yes or n for no");
+            String Response = scanner.nextLine();
+            if (Response.equals("y"))
+            {
+                System.out.println("Please enter the name of the text file: ");
+                Response = scanner.nextLine();
+                processData(Response);
+                if (fileExists(Response))
+                {
+                    input = true;
+                }
+            }
+            if (Response.equals("n"))
+            {
+                System.out.println("Please enter the total amount of packages you wish to be delivered: ");
+                while (true) {
+                    try {
+                        String userInput = scanner.next();
+                        TotalPackages = Integer.parseInt(userInput);
+                        break; // If parsing is successful, exit the loop
+                    } catch (NumberFormatException e) {
+                        System.out.println("Invalid input. Please enter a valid integer.");
+                    }
+                }
+                Coordinates = new int[TotalPackages][2];
+                Random random = new Random();
+                for (int[] delivery : Coordinates)
+                {
+                    delivery[0] = random.nextInt(201) - 100;  // Generates a random number between -100 and 100
+                    delivery[1] = random.nextInt(201) - 100;  // Generates a random number between -100 and 100
+                }
+                updateDistanceArray();
+                input = true;
+            }
+        }
+        System.out.println("Enter the total number of delivery drivers available");
+        while (true)
+        {
+            try
+            {
+                String userInput = scanner.next();
+                TotalDrivers = Integer.parseInt(userInput); // Used when searching for drivers
+                break; // If parsing is successful, exit the loop
+            }
+            catch (NumberFormatException e)
+            {
+                System.out.println("Invalid input. Please enter a valid integer.");
+            }
+        }
+
     }
 
     public ACLMessage createMessage(AID reciever, String content)
