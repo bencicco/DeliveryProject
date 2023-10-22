@@ -19,12 +19,15 @@ public class MasterAgent extends Agent
 {
     public RouteGroup[] Population; // The population for the GA
     public int TotalDrivers; // A number so that the MA knows whether it has found all delivery agents, initalised through user input
-    public int[][] Distances; // Distances[x][y] corresponds to the distance between package x and y
+    public int PopulationSize; // The population size for the GA
+    public int MutationRate; // The mutation rate for the GA
+    public int Iterations; // The number of generations for the GA
+    public float[][] Distances; // Distances[x][y] corresponds to the distance between package x and y
     public int[][] Coordinates; // Coordinates[1] refers to a coordinate array for package1: [x,y]
     public int TotalPackages; // The total number of packages
     private AID[] Agents; // Stores all the DA's
     public int[] Capacities; // Stores the capacities for each DA
-    private int[] DistanceRestraints; // Stores the distance restraint for each DA
+    public int[] DistanceRestraints; // Stores the distance restraint for each DA
     private RouteGroup Solution; // The final solution from the GA
     private int step; // Represents stage of conversation with DA's
     private MasterAgent Master; // This Agent
@@ -199,8 +202,12 @@ public class MasterAgent extends Agent
 
                 case 3: // Uses the GA to generate optimal routes for each DA, then sends routes to driver
                     System.out.println("Attempting to find solution");
-                    GeneticAlgorithm GA = new GeneticAlgorithm(Master, 500, 10, 100);
-                    Solution = GA.FindSolution(); // Calls FindSolution() which runs GA
+                    //Set GA parameters to default values if not assigned
+                    if(PopulationSize == 0) {PopulationSize = 500;}
+                    if(MutationRate == 0) {MutationRate = 10;}
+                    if(Iterations == 0) {Iterations = 100;}
+                    GeneticAlgorithm GA = new GeneticAlgorithm(Master, PopulationSize, MutationRate, Iterations);
+                    RouteGroup solution = GA.FindSolution(); // Calls FindSolution() which runs GA
                     System.out.println("Found solution");
                     Solution.displayRouteGroup();
                     // ** SEND ROUTES TO DRIVER ** //
@@ -345,7 +352,7 @@ public class MasterAgent extends Agent
 
     private void updateDistanceArray()
     {
-        Distances = new int[TotalPackages][TotalPackages];
+        Distances = new float[TotalPackages][TotalPackages];
         for(int i = 0; i <  TotalPackages; i++)
         {
             for (int j = 0; j < TotalPackages; j++)
@@ -361,11 +368,11 @@ public class MasterAgent extends Agent
             }
         }
     }
-    private static int distanceCalculator(int[] a, int[] b)
+    private static float distanceCalculator(int[] a, int[] b)
     {
         double xval = a[0] - b[0];
         double yval = a[1] - b[1];
         double distance = Math.sqrt(xval * xval  + yval * yval);
-        return (int) Math.round(distance); // Distance values are rounded to integers
+        return (float) distance;
     }
 }

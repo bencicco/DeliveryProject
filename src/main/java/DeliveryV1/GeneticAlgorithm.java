@@ -40,23 +40,33 @@ public class GeneticAlgorithm
         // Phase two: Assign random packages to each 'null' route
         for (RouteGroup solution : population)
         {
+            int timeout = 0; // Timeout to prevent being stuck in loop of attempting to assign new package with no valid routes (all full, etc.)
             List<Integer> packages = new ArrayList<>();
             for (int i = 0; i < Master.TotalPackages; i++)
             {
                 packages.add(i);
             }
             Random random = new Random();
-
-            while (!packages.isEmpty())
+            //System.out.println("-----------BEGIN ASSIGNING NEXT GROUP-------------");
+            while (!packages.isEmpty() && timeout < Master.TotalPackages * 20)
             {
+                //System.out.println("ASSIGNING NEXT PACKAGE!!");
                 // Generate a random index within the range of available packages
                 int randomIndex = random.nextInt(packages.size()); // Choose a random index
                 int randomPackage = packages.get(randomIndex); // Package corresponding to random index
                 int randomRoute = random.nextInt(Master.TotalDrivers); // Choose random route
-                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length); // Choose a random index of route
-                solution.Group[randomRoute].getOrder()[randomOrder] = randomPackage; // Assign random package
-                packages.remove(randomIndex); // Update consistency list
+                Route selectedRoute = solution.Group[randomRoute];
+                int randomOrder = random.nextInt(selectedRoute.getOrder().length); // Choose a random index of route
+
+                if (PackageIsValid(selectedRoute, randomRoute, randomPackage, randomOrder))
+                {
+                    selectedRoute.AddPackage(randomPackage, randomOrder); // Assign randomly selected package
+                    selectedRoute.calculateTotalDistance(Master.Distances, Master.Coordinates); //Recalculate total distance for route
+                    packages.remove(randomIndex); // Update consistency list
+                }
+                timeout++;
             }
+            //System.out.println("Finished assigning packages for group");
         }
         Master.Population = population;
     }
@@ -67,13 +77,14 @@ public class GeneticAlgorithm
         float routegroupAverageDistance = 0;
         for (RouteGroup routegroup : population)
         {
-            routegroupAverageDistance += routegroup.GetTotalDistance() / totalPackages;
+            routegroupAverageDistance += (float) routegroup.GetTotalDistance() / totalPackages;
         }
         for (int i = 0; i < population.length; i++)
         {
             int packagesDelivered = population[i].calculateTotalPackages();
-            int totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
-            populationFitness[i] = (float) (100 * packagesDelivered) - (float) (0.0001 * totalDistance);
+            float totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
+            //populationFitness[i] = (float) (packagesDelivered) - (float) (0.001 * totalDistance);
+            populationFitness[i] = (float) packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
         }
         populationFitness = normalise(populationFitness);
         return populationFitness;
@@ -100,6 +111,15 @@ public class GeneticAlgorithm
         }
     }
 
+    private static float getMeanFitness(float[] a) {
+        float totalFitness = 0;
+        int length = a.length;
+        for(float i : a)
+        {
+            totalFitness += i;
+        }
+        return totalFitness/length;
+    }
 
     private static float[] normalise(float[] a)
     {
@@ -107,11 +127,13 @@ public class GeneticAlgorithm
         float[] sorted = a.clone();
         Arrays.sort(sorted);
 
-        float minVal = sorted[0];
-        float maxVal = sorted[sorted.length - 1];
-        for (int i = 0; i < a.length; i++)
+        if(sorted.length > 0)
         {
-            result[i] = (a[i] - minVal) / (maxVal - minVal);
+            float minVal = sorted[0];
+            float maxVal = sorted[sorted.length - 1];
+            for (int i = 0; i < a.length; i++) {
+                result[i] = (a[i] - minVal) / (maxVal - minVal);
+            }
         }
         return result;
     }
@@ -127,51 +149,71 @@ public class GeneticAlgorithm
         List<Integer> packageConsistency = new ArrayList<>(); // Used to ensure a package isn't delivered twice
         for (int i = 0; i < child.Group.length; i++)
         {
-            // ** Choose random section for child to inherit from parent 1 ** //
-            int StartPackage = (int) (Math.random() * child.Group[i].getOrder().length);
-            int randomEnd = (int) (Math.random() * ((child.Group[i].getOrder().length) - StartPackage));
-            int EndPackage = child.Group[i].getOrder().length - randomEnd;
-            // ** Assign child packages based on sections inherited from parent 1, other spaces filled in by parent 2 ** //
-            for (int j = 0; j < child.Group[i].getOrder().length; j++)
+            boolean validChild = false;
+            int maxIterations = 50;
+            int iterations = 0;
+            // Until produces a valid child from parents or reaches termination iterations
+            while (iterations < maxIterations && !validChild) {
+                // ** Choose random section for child to inherit from parent 1 ** //
+                int StartPackage = (int) (Math.random() * child.Group[i].getOrder().length);
+                int randomEnd = (int) (Math.random() * ((child.Group[i].getOrder().length) - StartPackage));
+                int EndPackage = child.Group[i].getOrder().length - randomEnd;
+                // ** Assign child packages based on sections inherited from parent 1, other spaces filled in by parent 2 ** //
+                for (int j = 0; j < child.Group[i].getOrder().length; j++)
+                {
+                    if (j >= StartPackage && j <= EndPackage) // If the package is in the section to be inherited from parent 1
+                    {
+                        if (parent1.Group[i].getOrder()[j] != -1) // If the package is not an empty package
+                        {
+                            if (!packageConsistency.contains(parent1.Group[i].getOrder()[j])) // If the package has not already been assigned
+                            {
+                                packageConsistency.add(parent1.Group[i].getOrder()[j]); // Update the package consistency
+                                child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j]; // Assign the package to the child
+                            }
+                            else
+                            {
+                                child.Group[i].getOrder()[j] = -1; // If the package has already been assigned, assign empty package to child
+                            }
+                        }
+                        else
+                        {
+                            child.Group[i].getOrder()[j] = -1; // If the parent package is -1 assign -1 to child
+                        }
+                    }
+                    else if (j < StartPackage || j > EndPackage) // If the package to be assigned is from child two
+                    {
+                        if (parent2.Group[i].getOrder()[j] != -1)
+                        {
+                            if (!packageConsistency.contains(parent2.Group[i].getOrder()[j])) // Ensure the package to be inherited has not been assigned
+                            {
+                                packageConsistency.add(parent2.Group[i].getOrder()[j]);
+                                child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
+                            }
+                            else
+                            {
+                                child.Group[i].getOrder()[j] = -1; // Inherit nothing if parent package has already been assigned
+                            }
+                        }
+                        else
+                        {
+                            child.Group[i].getOrder()[j] = -1; // Inherit null package from parent 2
+                        }
+                    }
+                }
+                child.Group[i].calculateTotalDistance(Master.Distances, Master.Coordinates);
+                if(child.Group[i].totalDistance <= Master.DistanceRestraints[i])
+                {
+                    validChild = true;
+                }
+                else
+                {
+                    iterations++;
+                }
+            }
+            if(!validChild)
             {
-                if (j >= StartPackage && j <= EndPackage) // If the package is in the section to be inherited from parent 1
-                {
-                    if (parent1.Group[i].getOrder()[j] != -1) // If the package is not an empty package
-                    {
-                        if (!packageConsistency.contains(parent1.Group[i].getOrder()[j])) // If the package has not already been assigned
-                        {
-                            packageConsistency.add(parent1.Group[i].getOrder()[j]); // Update the package consistency
-                            child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j]; // Assign the package to the child
-                        }
-                        else
-                        {
-                            child.Group[i].getOrder()[j] = -1; // If the package has already been assigned, assign empty package to child
-                        }
-                    }
-                    else
-                    {
-                        child.Group[i].getOrder()[j] = -1; // If the parent package is -1 assign -1 to child
-                    }
-                }
-                else if (j < StartPackage || j > EndPackage) // If the package to be assigned is from child two
-                {
-                    if (parent2.Group[i].getOrder()[j] != -1)
-                    {
-                        if (!packageConsistency.contains(parent2.Group[i].getOrder()[j])) // Ensure the package to be inherited has not been assigned
-                        {
-                            packageConsistency.add(parent2.Group[i].getOrder()[j]);
-                            child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
-                        }
-                        else
-                        {
-                            child.Group[i].getOrder()[j] = -1; // Inherit nothing if parent package has already been assigned
-                        }
-                    }
-                    else
-                    {
-                        child.Group[i].getOrder()[j] = -1; // Inherit null package from parent 2
-                    }
-                }
+                System.out.println("Failed to produce child in ordered crossover: inheriting parent values.");
+                child.Group[i] = parent1.Group[i];
             }
         }
         return child;
@@ -180,16 +222,30 @@ public class GeneticAlgorithm
     // ** Mutation: Swaps two random packages ** //
     private RouteGroup swapMutation(RouteGroup solution)
     {
-        // Pick two random routes from the RouteGroup
-        int randomRoute1 = (int) (Math.random() * solution.Group.length);
-        int randomRoute2 = (int) (Math.random() * solution.Group.length);
-        // Pick a random package from each random route
-        int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
-        int randomPos2 = (int) (Math.random() * solution.Group[randomRoute2].getOrder().length);
-        int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1]; // Store the original value
-        // Reassign values
-        solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
-        solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
+        boolean validMutation = false;
+        int maxIterations = 50;
+        int iterations = 0;
+        while (iterations < maxIterations && !validMutation)
+        {
+            // Pick two random routes from the RouteGroup
+            int randomRoute1 = (int) (Math.random() * solution.Group.length);
+            int randomRoute2 = (int) (Math.random() * solution.Group.length);
+            // Pick a random package from each random route
+            int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
+            int randomPos2 = (int) (Math.random() * solution.Group[randomRoute2].getOrder().length);
+            // If both new package assignments are valid according to distance constraints
+            if(PackageIsValid(solution.Group[randomRoute1], randomRoute1, solution.Group[randomRoute2].getOrder()[randomPos2], randomPos1) && PackageIsValid(solution.Group[randomRoute2], randomRoute2, solution.Group[randomRoute1].getOrder()[randomPos1], randomPos2))
+            {
+                int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1];
+                solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
+                solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
+                validMutation = true;
+            }
+            else
+            {
+                iterations++;
+            }
+        }
         return solution;
     }
 
@@ -198,8 +254,9 @@ public class GeneticAlgorithm
     {
         RouteGroup child = orderedCrossover(parent1, parent2);
         // ** Chance of mutation rate = 1/MutationRate ** //
+        //MutationRate = 10, mutation_chance = (0-1) * 10 = 10% ?? needs clarification - nathan
         int mutation_chance = (int) (Math.random() * MutationRate);
-        if (mutation_chance == 1)
+        if (mutation_chance == 1) // typo? >=
         {
             child = swapMutation(child);
         }
@@ -226,6 +283,17 @@ public class GeneticAlgorithm
     public RouteGroup FindSolution()
     {
         initialisePopulation();
+        //print population for debug
+        /*
+        for (RouteGroup individual: Master.Population)
+        {
+            for (Route driver: individual.Group)
+            {
+                System.out.println(Arrays.toString(driver.getOrder()));
+            }
+        }
+        */
+        
         int iterationCount = 0;
         // ** While max Iterations has not been reached and population has not converged ** //
         while (iterationCount < Iterations && getMedianFitness(evaluateFitness(Master.Population, Master.TotalPackages)) != 1)
@@ -285,6 +353,27 @@ public class GeneticAlgorithm
         for (int i = 0; i < newGeneration.size(); i++)
         {
             Master.Population[i] = newGeneration.get(i);
+        }
+    }
+
+    private boolean PackageIsValid(Route route, int routeID, int packageID, int packageOrder)
+    {
+        int[] copy = Arrays.copyOf(route.getOrder(), route.getOrder().length);
+        Route testRoute = new Route(copy, route.getTotalDistance());
+        //System.out.println("Current group distance: " + route.totalDistance);
+        // Add random package to copied random route and recalculate distance.
+        testRoute.AddPackage(packageID, packageOrder);
+        testRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
+        //System.out.println("New distance: " + route.totalDistance);
+        if (testRoute.totalDistance <= Master.DistanceRestraints[routeID]) // If new distance exceeds distance restraints
+        {
+            //System.out.println("Distance exceeds restraints!");
+            return false;
+        }
+        else
+        {
+            //System.out.println("Final distance for group is: " + testRoute.totalDistance);
+            return true;
         }
     }
 }
