@@ -84,7 +84,7 @@ public class Route
     public int calculateLastDistance(int[][]coordinates)
     {
         GetLastPackage();
-        if (FirstPackage != -1)
+        if (LastPackage != -1)
         {
             return distanceCalculator(Depot, coordinates[LastPackage]);
         }
@@ -97,9 +97,6 @@ public class Route
     // Calculate the total distance of the route
     public void calculateTotalDistance(int[][] distances, int[][] coordinates)
     {
-        int[] depot = new int[2];
-        depot[0] = 0;
-        depot[1] = 0;
         int distance = 0;
         GetLastPackage();
         GetFirstPackage();

@@ -45,17 +45,30 @@ public class GeneticAlgorithm
             {
                 packages.add(i);
             }
-            Random random = new Random();
 
+            int timeout = 0;
+            Random random = new Random();
             while (!packages.isEmpty())
             {
                 // Generate a random index within the range of available packages
                 int randomIndex = random.nextInt(packages.size()); // Choose a random index
                 int randomPackage = packages.get(randomIndex); // Package corresponding to random index
                 int randomRoute = random.nextInt(Master.TotalDrivers); // Choose random route
-                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length); // Choose a random index of route
-                solution.Group[randomRoute].getOrder()[randomOrder] = randomPackage; // Assign random package
+                Route selectedRoute = solution.Group[randomRoute];
+                int randomOrder = random.nextInt(selectedRoute.getOrder().length); // Choose a random index of route
+
+                selectedRoute.getOrder()[randomOrder] = randomPackage; // Assign random package
                 packages.remove(randomIndex); // Update consistency list
+
+                /*
+                if (PackageIsValid(selectedRoute, randomRoute, randomPackage, randomOrder))
+                {
+                    selectedRoute.getOrder()[randomOrder] = randomPackage; // Assign random package
+                    packages.remove(randomIndex); // Update consistency list
+                }
+                */
+                System.out.println(1);
+                timeout++;
             }
         }
         Master.Population = population;
@@ -67,13 +80,14 @@ public class GeneticAlgorithm
         float routegroupAverageDistance = 0;
         for (RouteGroup routegroup : population)
         {
-            routegroupAverageDistance += routegroup.GetTotalDistance() / totalPackages;
+            routegroupAverageDistance += (routegroup.GetTotalDistance() / routegroup.calculateTotalPackages())/routegroup.Group.length;
         }
         for (int i = 0; i < population.length; i++)
         {
             int packagesDelivered = population[i].calculateTotalPackages();
             int totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
-            populationFitness[i] = (float) (100 * packagesDelivered) - (float) (0.0001 * totalDistance);
+            //populationFitness[i] = (float) (100 * packagesDelivered) - (float) (0.0001 * totalDistance);
+            populationFitness[i] = (float) packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
         }
         populationFitness = normalise(populationFitness);
         return populationFitness;
@@ -285,6 +299,28 @@ public class GeneticAlgorithm
         for (int i = 0; i < newGeneration.size(); i++)
         {
             Master.Population[i] = newGeneration.get(i);
+        }
+    }
+
+
+    private boolean PackageIsValid(Route route, int routeID, int packageID, int packageOrder)
+    {
+        int[] copy = Arrays.copyOf(route.getOrder(), route.getOrder().length);
+        //System.out.println("Current group distance: " + route.totalDistance);
+        // Add random package to selected random route and recalculate distance.
+        Route testRoute = new Route(copy, route.getTotalDistance());
+        testRoute.getOrder()[packageOrder] = packageID;
+        testRoute.calculateTotalDistance(Master.Distances, Master.Coordinates);
+        //System.out.println("New distance: " + route.totalDistance);
+        if (testRoute.totalDistance > Master.DistanceRestraints[routeID]) // If new distance exceeds distance restraints
+        {
+            //System.out.println("Distance exceeds restraints! REVERTING CHANGES!");
+            return false;
+        }
+        else
+        {
+            //System.out.println("Final distance for group is: " + route.totalDistance);
+            return true;
         }
     }
 }
