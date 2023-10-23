@@ -35,6 +35,9 @@ public class MasterAgent extends Agent
     protected void setup()
     {
         step = 0;
+        MutationRate = 10;
+        PopulationSize = 100;
+        Iterations = 100;
         Master = this;
         userInputAndOutput();
         addBehaviour(new TickerBehaviour(this, 1000)
@@ -203,10 +206,11 @@ public class MasterAgent extends Agent
                 case 3: // Uses the GA to generate optimal routes for each DA, then sends routes to driver
                     System.out.println("Attempting to find solution");
                     //Set GA parameters to default values if not assigned
-                    if(PopulationSize == 0) {PopulationSize = 500;}
-                    if(MutationRate == 0) {MutationRate = 10;}
-                    if(Iterations == 0) {Iterations = 100;}
+//                    if(PopulationSize == 0) {PopulationSize = 500;}
+//                    if(MutationRate == 0) {MutationRate = 10;}
+//                    if(Iterations == 0) {Iterations = 100;}
                     GeneticAlgorithm GA = new GeneticAlgorithm(Master, PopulationSize, MutationRate, Iterations);
+                    System.out.println("Created GA");
                     RouteGroup solution = GA.FindSolution(); // Calls FindSolution() which runs GA
                     System.out.println("Found solution");
                     Solution.displayRouteGroup();
@@ -245,7 +249,7 @@ public class MasterAgent extends Agent
         }
     }
 
-    private void userInputAndOutput()
+    public void userInputAndOutput()
     {
         System.out.println("Hallo! Master-agent " + getAID().getName() + " is ready.");
         Scanner scanner = new Scanner(System.in);

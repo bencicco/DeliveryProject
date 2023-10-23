@@ -21,6 +21,7 @@ public class GeneticAlgorithm
     }
     public void initialisePopulation() // This function intialises the population in two phases
     {
+        System.out.println("Population Size: " + PopulationSize);
         // Phase one: intialise route lengths and set packages to -1
         RouteGroup[] population = new RouteGroup[PopulationSize];
         for (int i = 0; i < population.length; i++)  // Outer loop: For each RouteGroup in the population:
@@ -50,7 +51,7 @@ public class GeneticAlgorithm
             //System.out.println("-----------BEGIN ASSIGNING NEXT GROUP-------------");
             while (!packages.isEmpty() && timeout < Master.TotalPackages * 20)
             {
-                //System.out.println("ASSIGNING NEXT PACKAGE!!");
+                System.out.println("ASSIGNING NEXT PACKAGE!!");
                 // Generate a random index within the range of available packages
                 int randomIndex = random.nextInt(packages.size()); // Choose a random index
                 int randomPackage = packages.get(randomIndex); // Package corresponding to random index
@@ -67,6 +68,7 @@ public class GeneticAlgorithm
                 timeout++;
             }
             //System.out.println("Finished assigning packages for group");
+            solution.displayRouteGroup();
         }
         Master.Population = population;
     }
@@ -79,6 +81,7 @@ public class GeneticAlgorithm
         {
             routegroupAverageDistance += (float) routegroup.GetTotalDistance() / totalPackages;
         }
+        System.out.println("route group average Distance: " + routegroupAverageDistance);
         for (int i = 0; i < population.length; i++)
         {
             int packagesDelivered = population[i].calculateTotalPackages();
@@ -97,7 +100,8 @@ public class GeneticAlgorithm
 
         int length = sorted.length;
 
-        if (length % 2 == 0) {
+        if (length % 2 == 0)
+        {
             // If the length of the array is even, return the average of the two middle values
             int middleIndex1 = length / 2 - 1;
             int middleIndex2 = length / 2;
@@ -264,41 +268,40 @@ public class GeneticAlgorithm
     }
     public List<RouteGroup> tournamentSelection()
     {
+        System.out.println("Beginning tournament Selection: ");
         List<RouteGroup> tournament = new ArrayList<>();
         float[] fitness = evaluateFitness(Master.Population, Master.TotalPackages);
+        System.out.println("fitness array calculated!");
         float average_fitness = getMedianFitness(fitness);
-        while (tournament.size() < PopulationSize / 2 && average_fitness != 1)
+        System.out.println("getMedianFitness calculated");
+        for (int i = 0; i < fitness.length && tournament.size() <  PopulationSize / 2 && average_fitness != 1; i++)
         {
-            for (int i = 0; i < fitness.length; i++)
+            average_fitness = getMedianFitness(fitness);
+            if (fitness[i] > average_fitness) //Ensures 50% of populations survives
             {
-                if (fitness[i] > getMedianFitness(fitness)) //Ensures 50% of populations survives
-                {
-                    tournament.add(Master.Population[i]);
-                }
+                tournament.add(Master.Population[i]);
             }
         }
+
+        System.out.println("Median fitness: " + getMedianFitness(fitness));
         return tournament;
     }
 
     public RouteGroup FindSolution()
     {
         initialisePopulation();
+        System.out.println("Initialised Population");
+
         //print population for debug
-        /*
-        for (RouteGroup individual: Master.Population)
-        {
-            for (Route driver: individual.Group)
-            {
-                System.out.println(Arrays.toString(driver.getOrder()));
-            }
-        }
-        */
+
         
         int iterationCount = 0;
         // ** While max Iterations has not been reached and population has not converged ** //
         while (iterationCount < Iterations && getMedianFitness(evaluateFitness(Master.Population, Master.TotalPackages)) != 1)
         {
+            System.out.println("Calculating Population " + iterationCount);
             createNewGeneration(tournamentSelection()); // Produce next Generation
+            System.out.println("Created new Generation");
             iterationCount += 1;
         }
         int bestsolutionindex = 0;
@@ -317,12 +320,14 @@ public class GeneticAlgorithm
 
     public void createNewGeneration (List<RouteGroup> tournament)
     {
+        System.out.println("Creating new Generation");
         List<RouteGroup> newGeneration = new ArrayList<>();
         while (tournament.size() > 1)
         {
             // ** Select random two parents from tournament ** //
             int parent1 = (int) (Math.random() * tournament.size());
             int parent2 = (int) (Math.random() * tournament.size());
+            System.out.println("Chosen two parents");
             while (parent1 == parent2) // if parent1 and parent2 are the same, reassign parent 2
             {
                 parent2 = (int) (Math.random() * tournament.size());
@@ -331,7 +336,7 @@ public class GeneticAlgorithm
             newGeneration.add(crossoverAndMutate(tournament.get(parent1), tournament.get(parent2)));
             newGeneration.add(crossoverAndMutate(tournament.get(parent1), tournament.get(parent2)));
             newGeneration.add(crossoverAndMutate(tournament.get(parent1), tournament.get(parent2)));
-
+            System.out.println("Complete a successful Reproduction");
             tournament.remove(parent1);
             if (parent2 > 0)
             {
@@ -340,6 +345,7 @@ public class GeneticAlgorithm
             {
                 tournament.remove(parent2);
             }
+            System.out.println("Remaining parents in tournament: " + tournament.size());
         }
         // If there's one parent left, undergo Asexual reproduction
         if (tournament.size() == 1)
