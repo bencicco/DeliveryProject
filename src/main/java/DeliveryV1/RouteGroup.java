@@ -22,7 +22,7 @@ public class RouteGroup
         return totalDistance;
     }
 
-    public int CalculateTotalDistance(int[][] Distances, int[][] Coordinates)
+    public float CalculateTotalDistance(float[][] Distances, int[][] Coordinates)
     {
         totalDistance = 0;
         for (int i = 0; i < GroupSize; i++)

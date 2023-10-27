@@ -83,7 +83,8 @@ public class GeneticAlgorithm
         for (int i = 0; i < population.length; i++)
         {
             int packagesDelivered = population[i].calculateTotalPackages();
-            int totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
+            float totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
+            //populationFitness[i] = (float) (100 * packagesDelivered) - (float) (0.0001 * totalDistance);
             populationFitness[i] = (float) packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
         }
         populationFitness = normalise(populationFitness);
@@ -273,7 +274,7 @@ public class GeneticAlgorithm
         route1.calculateTotalDistance(Master.Distances, Master.Coordinates);
         route2.calculateTotalDistance(Master.Distances, Master.Coordinates);
         modifiedroute1.calculateTotalDistance(Master.Distances, Master.Coordinates);
-        modifiedroute2.calculateTotalDistance(Master.Distances, Master.Distances);
+        modifiedroute2.calculateTotalDistance(Master.Distances, Master.Coordinates);
         if (solution.Group[randomRoute1].totalDistance - route1.totalDistance + modifiedroute1.totalDistance <= solution.Group[randomRoute1].maxDistance && solution.Group[randomRoute2].totalDistance - route2.totalDistance + modifiedroute2.totalDistance <= solution.Group[randomRoute2].maxDistance)
         {
             int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1]; // Store the original value
