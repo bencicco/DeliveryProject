@@ -75,17 +75,25 @@ public class GeneticAlgorithm
     public float[] evaluateFitness(RouteGroup[] population, int totalPackages)
     {
         float[] populationFitness = new float[population.length];
-        float routegroupAverageDistance = 0;
+        float routegroupHighestDistance = 0;
         for (RouteGroup routegroup : population)
         {
-            routegroupAverageDistance += routegroup.GetTotalDistance() / totalPackages;
+            if(routegroup.GetTotalDistance() > routegroupHighestDistance)
+            {
+                routegroupHighestDistance = routegroup.GetTotalDistance();
+            }
         }
         for (int i = 0; i < population.length; i++)
         {
             int packagesDelivered = population[i].calculateTotalPackages();
             float totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
             //populationFitness[i] = (float) (100 * packagesDelivered) - (float) (0.0001 * totalDistance);
-            populationFitness[i] = (float) packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
+            //populationFitness[i] = (float) packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
+
+            int magnitude = (int) Math.pow(10, (int) Math.log10(routegroupHighestDistance));
+            float scalingFactor = (float) (routegroupHighestDistance / (Math.pow(magnitude, 2)));
+
+            populationFitness[i] = 1000 * population[i].calculateTotalPackages() - scalingFactor * population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
         }
         populationFitness = normalise(populationFitness);
         return populationFitness;
