@@ -8,7 +8,9 @@ public class Route
     private int[] order; // Represents the order of packages to be delivered
     public int totalDistance; // Represents the total distance of the route
 
-    public Route(int[] order, int totalDistance)
+    public int maxDistance;
+
+    public Route(int[] order, int totalDistance, int maxDistance)
     {
         this.order = order;
         this.totalDistance = totalDistance;
@@ -17,6 +19,8 @@ public class Route
         Depot = new int[2];
         Depot[0] = 0;
         Depot[1] = 0;
+        this.maxDistance = maxDistance;
+
     }
 
     public void GetFirstPackage()

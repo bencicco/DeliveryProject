@@ -24,7 +24,7 @@ public class MasterAgent extends Agent
     public int TotalPackages; // The total number of packages
     private AID[] Agents; // Stores all the DA's
     public int[] Capacities; // Stores the capacities for each DA
-    private int[] DistanceRestraints; // Stores the distance restraint for each DA
+    public int[] DistanceRestraints; // Stores the distance restraint for each DA
     private RouteGroup Solution; // The final solution from the GA
     private int step; // Represents stage of conversation with DA's
     private MasterAgent Master; // This Agent
@@ -199,7 +199,7 @@ public class MasterAgent extends Agent
 
                 case 3: // Uses the GA to generate optimal routes for each DA, then sends routes to driver
                     System.out.println("Attempting to find solution");
-                    GeneticAlgorithm GA = new GeneticAlgorithm(Master, 500, 10, 100);
+                    GeneticAlgorithm GA = new GeneticAlgorithm(Master, 1000, 10, 1000);
                     Solution = GA.FindSolution(); // Calls FindSolution() which runs GA
                     System.out.println("Found solution");
                     Solution.displayRouteGroup();

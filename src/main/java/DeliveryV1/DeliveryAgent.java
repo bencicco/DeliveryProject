@@ -13,7 +13,7 @@ public class DeliveryAgent extends Agent {
     private Route route;
     protected void setup()
     {
-        route = new Route(new int[Capacity], 0);
+        route = new Route(new int[Capacity], 0, MaxDistance);
         // Create and show the GUI
         GUI = new DeliveryAgentGUI(this);
         GUI.showGUI();
@@ -64,7 +64,7 @@ public class DeliveryAgent extends Agent {
                         }
 
                         // Create a new Route object
-                        Route newRoute = new Route(packageOrder, 0);
+                        Route newRoute = new Route(packageOrder, 0, MaxDistance);
 
                         // Now you have the new Route object, you can use it as needed
                         route = newRoute;

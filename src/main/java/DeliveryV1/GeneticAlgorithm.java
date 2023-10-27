@@ -28,7 +28,7 @@ public class GeneticAlgorithm
             population[i] = new RouteGroup(Master.TotalDrivers);
             for (int j = 0; j < population[i].Group.length; j++) // Inner loop 1: For each route in the route group:
             {
-                population[i].Group[j] = new Route(new int[Master.Capacities[j]], 0);
+                population[i].Group[j] = new Route(new int[Master.Capacities[j]], 0, Master.DistanceRestraints[j]);
                 for (int k = 0; k < Master.Capacities[j]; k++)  // Inner loop 2: For each package in the route:
                 {
                     // Set all packages to -1;
@@ -53,9 +53,20 @@ public class GeneticAlgorithm
                 int randomIndex = random.nextInt(packages.size()); // Choose a random index
                 int randomPackage = packages.get(randomIndex); // Package corresponding to random index
                 int randomRoute = random.nextInt(Master.TotalDrivers); // Choose random route
-                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length); // Choose a random index of route
-                solution.Group[randomRoute].getOrder()[randomOrder] = randomPackage; // Assign random package
-                packages.remove(randomIndex); // Update consistency list
+                int randomOrder = random.nextInt(solution.Group[randomRoute].getOrder().length);
+                int originalPackage = solution.Group[randomRoute].getOrder()[randomOrder];
+                solution.Group[randomRoute].calculateTotalDistance(Master.Distances, Master.Coordinates); // Choose a random index of route
+                packages.remove(randomIndex);
+                if (solution.Group[randomRoute].totalDistance < solution.Group[randomRoute].maxDistance)  // If the cyrrent route has not exceded its max Distance
+                {
+                    solution.Group[randomRoute].getOrder()[randomOrder] = randomPackage; // Assign random package
+                    solution.Group[randomRoute].calculateTotalDistance(Master.Distances, Master.Coordinates);
+                    if (solution.Group[randomRoute].totalDistance > solution.Group[randomRoute].maxDistance) // If the change has caused the route to exceed the distance
+                    {
+                        solution.Group[randomRoute].getOrder()[randomOrder] = originalPackage; //Undo the change
+                    }
+
+                }
             }
         }
         Master.Population = population;
@@ -73,7 +84,7 @@ public class GeneticAlgorithm
         {
             int packagesDelivered = population[i].calculateTotalPackages();
             int totalDistance = population[i].CalculateTotalDistance(Master.Distances, Master.Coordinates);
-            populationFitness[i] = (float) (100 * packagesDelivered) - (float) (0.0001 * totalDistance);
+            populationFitness[i] = (float) packagesDelivered - (totalDistance / (totalDistance + (routegroupAverageDistance * totalPackages)));
         }
         populationFitness = normalise(populationFitness);
         return populationFitness;
@@ -122,7 +133,7 @@ public class GeneticAlgorithm
         // ** Initialize the length of each route within child RouteGroup ** //
         for (int i = 0; i < parent1.Group.length; i++)
         {
-            child.Group[i] = new Route(new int[Master.Capacities[i]], 0);
+            child.Group[i] = new Route(new int[Master.Capacities[i]], 0, Master.DistanceRestraints[i]);
         }
         List<Integer> packageConsistency = new ArrayList<>(); // Used to ensure a package isn't delivered twice
         for (int i = 0; i < child.Group.length; i++)
@@ -132,6 +143,7 @@ public class GeneticAlgorithm
             int randomEnd = (int) (Math.random() * ((child.Group[i].getOrder().length) - StartPackage));
             int EndPackage = child.Group[i].getOrder().length - randomEnd;
             // ** Assign child packages based on sections inherited from parent 1, other spaces filled in by parent 2 ** //
+
             for (int j = 0; j < child.Group[i].getOrder().length; j++)
             {
                 if (j >= StartPackage && j <= EndPackage) // If the package is in the section to be inherited from parent 1
@@ -141,7 +153,12 @@ public class GeneticAlgorithm
                         if (!packageConsistency.contains(parent1.Group[i].getOrder()[j])) // If the package has not already been assigned
                         {
                             packageConsistency.add(parent1.Group[i].getOrder()[j]); // Update the package consistency
-                            child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j]; // Assign the package to the child
+                            child.Group[i].getOrder()[j] = parent1.Group[i].getOrder()[j];// Assign the package to the child
+                            child.Group[i].calculateTotalDistance(Master.Distances, Master.Coordinates);
+                            if (child.Group[i].totalDistance > child.Group[i].maxDistance)
+                            {
+                                child.Group[i].getOrder()[j] = -1;
+                            }
                         }
                         else
                         {
@@ -155,8 +172,7 @@ public class GeneticAlgorithm
                 }
                 else if (j < StartPackage || j > EndPackage) // If the package to be assigned is from child two
                 {
-                    if (parent2.Group[i].getOrder()[j] != -1)
-                    {
+                    if (parent2.Group[i].getOrder()[j] != -1) {
                         if (!packageConsistency.contains(parent2.Group[i].getOrder()[j])) // Ensure the package to be inherited has not been assigned
                         {
                             packageConsistency.add(parent2.Group[i].getOrder()[j]);
@@ -172,6 +188,7 @@ public class GeneticAlgorithm
                         child.Group[i].getOrder()[j] = -1; // Inherit null package from parent 2
                     }
                 }
+
             }
         }
         return child;
@@ -179,18 +196,92 @@ public class GeneticAlgorithm
 
     // ** Mutation: Swaps two random packages ** //
     private RouteGroup swapMutation(RouteGroup solution)
-    {
+    {  int[] subroute1 = null;
+        int[] subroute2 = null;
+        int[] modifiedsubroute1 = null;
+        int[] modifiedsubroute2 = null;
         // Pick two random routes from the RouteGroup
         int randomRoute1 = (int) (Math.random() * solution.Group.length);
         int randomRoute2 = (int) (Math.random() * solution.Group.length);
         // Pick a random package from each random route
         int randomPos1 = (int) (Math.random() * solution.Group[randomRoute1].getOrder().length);
         int randomPos2 = (int) (Math.random() * solution.Group[randomRoute2].getOrder().length);
-        int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1]; // Store the original value
-        // Reassign values
-        solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
-        solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
-        return solution;
+        if (randomPos1 != 0 && randomPos1 != solution.Group[randomRoute1].getOrder().length - 1)
+        {
+            subroute1 = new int[3];
+            subroute1[0] = solution.Group[randomRoute1].getOrder()[randomPos1 - 1];
+            subroute1[1] = solution.Group[randomRoute1].getOrder()[randomPos1];
+            subroute1[2] = solution.Group[randomRoute1].getOrder()[randomPos1 + 1];
+            modifiedsubroute1 = new int[3];
+            modifiedsubroute1[0] = solution.Group[randomRoute1].getOrder()[randomPos1 - 1];
+            modifiedsubroute1[1] = solution.Group[randomRoute2].getOrder()[randomPos2];
+            modifiedsubroute1[2] = solution.Group[randomRoute1].getOrder()[randomPos1 + 1];
+        }
+        else if (randomPos1 == 0)
+        {
+            subroute1 = new int[2];
+            subroute1[0] = solution.Group[randomRoute1].getOrder()[0];
+            subroute1[1] = solution.Group[randomRoute1].getOrder()[1];
+            modifiedsubroute1 = new int[2];
+            modifiedsubroute1[0] = solution.Group[randomRoute2].getOrder()[randomPos2];
+            modifiedsubroute1[1] = solution.Group[randomRoute1].getOrder()[1];
+        }
+        else if (randomPos1 == solution.Group[randomRoute1].getOrder().length - 1)
+        {
+            subroute1 = new int[2];
+            subroute1[0] = solution.Group[randomRoute1].getOrder()[solution.Group[randomRoute1].getOrder().length - 1];
+            subroute1[1] = solution.Group[randomRoute1].getOrder()[solution.Group[randomRoute1].getOrder().length - 2];
+            modifiedsubroute1 = new int[2];
+            modifiedsubroute1[0] = solution.Group[randomRoute2].getOrder()[randomPos2];
+            modifiedsubroute1[1] = solution.Group[randomRoute1].getOrder()[solution.Group[randomRoute1].getOrder().length - 2];
+        }
+        if (randomPos2 != 0 && randomPos2 != solution.Group[randomRoute2].getOrder().length - 1)
+        {
+            subroute2 = new int[3];
+            subroute2[0] = solution.Group[randomRoute2].getOrder()[randomPos2 - 1];
+            subroute2[1] = solution.Group[randomRoute2].getOrder()[randomPos2];
+            subroute2[2] = solution.Group[randomRoute2].getOrder()[randomPos2 + 1];
+            modifiedsubroute2 = new int[3];
+            modifiedsubroute2[0] = solution.Group[randomRoute2].getOrder()[randomPos2 - 1];
+            modifiedsubroute2[1] = solution.Group[randomRoute1].getOrder()[randomPos1];
+            modifiedsubroute2[2] = solution.Group[randomRoute2].getOrder()[randomPos2 + 1];
+        }
+        else if (randomPos2 == 0)
+        {
+            subroute2 = new int[2];
+            subroute2[0] = solution.Group[randomRoute1].getOrder()[0];
+            subroute2[1] = solution.Group[randomRoute2].getOrder()[1];
+            modifiedsubroute2 = new int[2];
+            modifiedsubroute2[0] = solution.Group[randomRoute1].getOrder()[randomPos1];
+            modifiedsubroute2[1] = solution.Group[randomRoute2].getOrder()[1];
+        }
+        else if (randomPos2 == solution.Group[randomRoute2].getOrder().length - 1)
+        {
+            subroute2 = new int[2];
+            subroute2[0] = solution.Group[randomRoute2].getOrder()[solution.Group[randomRoute2].getOrder().length - 1];
+            subroute2[1] = solution.Group[randomRoute2].getOrder()[solution.Group[randomRoute2].getOrder().length - 2];
+            modifiedsubroute2 = new int[2];
+            modifiedsubroute2[0] = solution.Group[randomRoute1].getOrder()[randomPos1];
+            modifiedsubroute2[1] = solution.Group[randomRoute2].getOrder()[solution.Group[randomRoute2].getOrder().length - 2];
+        }
+        solution.Group[randomRoute1].calculateTotalDistance(Master.Distances, Master.Coordinates);
+        solution.Group[randomRoute2].calculateTotalDistance(Master.Distances, Master.Coordinates);
+        Route route1 = new Route(subroute1, 0, Master.DistanceRestraints[randomRoute1]);
+        Route route2 = new Route(subroute2, 0, Master.DistanceRestraints[randomRoute2]);
+        Route modifiedroute1 = new Route(modifiedsubroute1, 0, Master.DistanceRestraints[randomRoute1]);
+        Route modifiedroute2 = new Route(modifiedsubroute2, 0, Master.DistanceRestraints[randomRoute2]);
+        route1.calculateTotalDistance(Master.Distances, Master.Coordinates);
+        route2.calculateTotalDistance(Master.Distances, Master.Coordinates);
+        modifiedroute1.calculateTotalDistance(Master.Distances, Master.Coordinates);
+        modifiedroute2.calculateTotalDistance(Master.Distances, Master.Distances);
+        if (solution.Group[randomRoute1].totalDistance - route1.totalDistance + modifiedroute1.totalDistance <= solution.Group[randomRoute1].maxDistance && solution.Group[randomRoute2].totalDistance - route2.totalDistance + modifiedroute2.totalDistance <= solution.Group[randomRoute2].maxDistance)
+        {
+            int tempstorage = solution.Group[randomRoute1].getOrder()[randomPos1]; // Store the original value
+            // Reassign values
+            solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
+            solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
+        }
+            return solution;
     }
 
     // CrossOver and Mutate: Combines swapMutation and Ordered Cross over using MutationRate
@@ -226,12 +317,14 @@ public class GeneticAlgorithm
     public RouteGroup FindSolution()
     {
         initialisePopulation();
+        System.out.println("Population Initialised!");
         int iterationCount = 0;
         // ** While max Iterations has not been reached and population has not converged ** //
         while (iterationCount < Iterations && getMedianFitness(evaluateFitness(Master.Population, Master.TotalPackages)) != 1)
         {
             createNewGeneration(tournamentSelection()); // Produce next Generation
             iterationCount += 1;
+            System.out.println("Population: " + iterationCount);
         }
         int bestsolutionindex = 0;
         float bestfitness = 0;
