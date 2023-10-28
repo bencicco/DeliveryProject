@@ -28,19 +28,9 @@ public class MasterAgent extends Agent
     private RouteGroup Solution; // The final solution from the GA
     private int step; // Represents stage of conversation with DA's
     private MasterAgent Master; // This Agent
-    private int PopulationSize = 1000;
-    private int MutationRate = 10;
-    private int Iterations = 1000;
 
     protected void setup()
     {
-        Object[] args = getArguments();
-        if(args != null)
-        {
-            PopulationSize = Integer.parseInt((String)args[0]);
-            MutationRate = Integer.parseInt((String)args[1]);
-            Iterations = Integer.parseInt((String)args[2]);
-        }
         step = 0;
         Master = this;
         userInputAndOutput();
@@ -209,7 +199,7 @@ public class MasterAgent extends Agent
 
                 case 3: // Uses the GA to generate optimal routes for each DA, then sends routes to driver
                     System.out.println("Attempting to find solution");
-                    GeneticAlgorithm GA = new GeneticAlgorithm(Master, PopulationSize, MutationRate, Iterations);
+                    GeneticAlgorithm GA = new GeneticAlgorithm(Master, 1000, 10, 1000);
                     Solution = GA.FindSolution(); // Calls FindSolution() which runs GA
                     System.out.println("Found solution");
                     Solution.displayRouteGroup();

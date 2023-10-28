@@ -13,21 +13,12 @@ public class DeliveryAgent extends Agent {
     private Route route;
     protected void setup()
     {
-        Object[] args = getArguments();
-        if(args != null)
-        {
-            Capacity = Integer.parseInt((String)args[0]);
-            MaxDistance = Integer.parseInt((String)args[1]);
-        }
-        route = new Route(new int[Capacity], 0, 0);
+        route = new Route(new int[Capacity], 0, MaxDistance);
         // Create and show the GUI
         GUI = new DeliveryAgentGUI(this);
         GUI.showGUI();
         //Waits for window to close before continuing
-        if(Capacity == 0 || MaxDistance == 0)
-        {
-            WaitForWindowClose();
-        }
+        WaitForWindowClose();
         addBehaviour(new CyclicBehaviour() {
             @Override
             public void action()
