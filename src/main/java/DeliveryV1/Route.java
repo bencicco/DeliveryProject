@@ -6,7 +6,7 @@ public class Route
     private int FirstPackage; // Represents the first non-negative package
     private int LastPackage; // Represents the last non-negative  package
     private int[] order; // Represents the order of packages to be delivered
-    public float totalDistance; // Represents the total distance of the route
+    public int totalDistance; // Represents the total distance of the route
 
     public int maxDistance;
 
@@ -54,7 +54,7 @@ public class Route
         return order;
     }
 
-    public float getTotalDistance()
+    public int getTotalDistance()
     {
         return totalDistance;
     }
@@ -72,7 +72,7 @@ public class Route
         return length;
     }
 
-    public float calculateFirstDistance(int[][]coordinates)
+    public int calculateFirstDistance(int[][]coordinates)
     {
         GetFirstPackage();
         if (FirstPackage != -1)
@@ -85,7 +85,7 @@ public class Route
         }
     }
 
-    public float calculateLastDistance(int[][]coordinates)
+    public int calculateLastDistance(int[][]coordinates)
     {
         GetLastPackage();
         if (FirstPackage != -1)
@@ -99,12 +99,12 @@ public class Route
     }
 
     // Calculate the total distance of the route
-    public void calculateTotalDistance(float[][] distances, int[][] coordinates)
+    public void calculateTotalDistance(int[][] distances, int[][] coordinates)
     {
         int[] depot = new int[2];
         depot[0] = 0;
         depot[1] = 0;
-        float distance = 0;
+        int distance = 0;
         GetLastPackage();
         GetFirstPackage();
         if (FirstPackage != -1)
@@ -144,11 +144,12 @@ public class Route
         totalDistance = distance;
     }
 
-    private static float distanceCalculator(int[] a, int[] b)
+    private static int distanceCalculator(int[] a, int[] b)
     {
         double xval = a[0] - b[0];
         double yval = a[1] - b[1];
-        return (float) Math.sqrt(xval * xval  + yval * yval);
+        double distance = Math.sqrt(xval * xval  + yval * yval);
+        return (int) Math.round(distance); //Distance values are rounded to integers
     }
 }
 
