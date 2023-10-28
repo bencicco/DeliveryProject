@@ -106,7 +106,11 @@ public class GeneticAlgorithm
 
         int length = sorted.length;
 
-        if (length % 2 == 0) {
+        if (length == 0)
+        {
+            return 0;
+        }
+        else if (length % 2 == 0) {
             // If the length of the array is even, return the average of the two middle values
             int middleIndex1 = length / 2 - 1;
             int middleIndex2 = length / 2;
@@ -127,11 +131,13 @@ public class GeneticAlgorithm
         float[] sorted = a.clone();
         Arrays.sort(sorted);
 
-        float minVal = sorted[0];
-        float maxVal = sorted[sorted.length - 1];
-        for (int i = 0; i < a.length; i++)
+        if(sorted.length > 0)
         {
-            result[i] = (a[i] - minVal) / (maxVal - minVal);
+            float minVal = sorted[0];
+            float maxVal = sorted[sorted.length - 1];
+            for (int i = 0; i < a.length; i++) {
+                result[i] = (a[i] - minVal) / (maxVal - minVal);
+            }
         }
         return result;
     }
