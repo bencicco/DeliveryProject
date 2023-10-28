@@ -76,7 +76,7 @@ public class CoordinateVisualizer extends JPanel {
                 g.drawLine(startX, startY, centerX, centerY);
                 if (route.totalDistance != 0)
                 {
-                    g.drawString("Total Distance: " + (int) route.totalDistance, startX, startY);
+                    g.drawString("Total Distance: " + (double) route.totalDistance, startX, startY);
                 }
             }
         }

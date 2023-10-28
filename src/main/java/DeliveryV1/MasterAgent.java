@@ -35,7 +35,7 @@ public class MasterAgent extends Agent
     protected void setup()
     {
         Object[] args = getArguments();
-        if(args.length > 0)
+        if(args != null)
         {
             PopulationSize = Integer.parseInt((String)args[0]);
             MutationRate = Integer.parseInt((String)args[1]);

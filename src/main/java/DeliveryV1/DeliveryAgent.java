@@ -14,7 +14,7 @@ public class DeliveryAgent extends Agent {
     protected void setup()
     {
         Object[] args = getArguments();
-        if(args.length > 0)
+        if(args != null)
         {
             Capacity = Integer.parseInt((String)args[0]);
             MaxDistance = Integer.parseInt((String)args[1]);
