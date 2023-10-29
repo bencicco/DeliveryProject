@@ -136,16 +136,21 @@ public class GeneticAlgorithm
             child.Group[i] = new Route(new int[Master.Capacities[i]], 0, Master.DistanceRestraints[i]);
         }
         List<Integer> packageConsistency = new ArrayList<>(); // Used to ensure a package isn't delivered twice
-        for (int i = 0; i < child.Group.length; i++)
-        {
+        List<Integer> routeConsistency = new ArrayList<>();
+        int i = (int) (Math.random() * child.Group.length);
+        while (routeConsistency.size() < child.Group.length) {
+            while (routeConsistency.contains(i)) {
+                i = (int) (Math.random() * child.Group.length);
+            }
+            routeConsistency.add(i);
+
             // ** Choose random section for child to inherit from parent 1 ** //
             int StartPackage = (int) (Math.random() * child.Group[i].getOrder().length);
             int randomEnd = (int) (Math.random() * ((child.Group[i].getOrder().length) - StartPackage));
             int EndPackage = child.Group[i].getOrder().length - randomEnd;
             // ** Assign child packages based on sections inherited from parent 1, other spaces filled in by parent 2 ** //
 
-            for (int j = 0; j < child.Group[i].getOrder().length; j++)
-            {
+            for (int j = 0; j < child.Group[i].getOrder().length; j++) {
                 if (j >= StartPackage && j <= EndPackage) // If the package is in the section to be inherited from parent 1
                 {
                     if (parent1.Group[i].getOrder()[j] != -1) // If the package is not an empty package
@@ -159,14 +164,10 @@ public class GeneticAlgorithm
                             {
                                 child.Group[i].getOrder()[j] = -1;
                             }
-                        }
-                        else
-                        {
+                        } else {
                             child.Group[i].getOrder()[j] = -1; // If the package has already been assigned, assign empty package to child
                         }
-                    }
-                    else
-                    {
+                    } else {
                         child.Group[i].getOrder()[j] = -1; // If the parent package is -1 assign -1 to child
                     }
                 }
@@ -177,14 +178,14 @@ public class GeneticAlgorithm
                         {
                             packageConsistency.add(parent2.Group[i].getOrder()[j]);
                             child.Group[i].getOrder()[j] = parent2.Group[i].getOrder()[j];
-                        }
-                        else
-                        {
+                            if (child.Group[i].totalDistance > child.Group[i].maxDistance)
+                            {
+                                child.Group[i].getOrder()[j] = -1;
+                            }
+                        } else {
                             child.Group[i].getOrder()[j] = -1; // Inherit nothing if parent package has already been assigned
                         }
-                    }
-                    else
-                    {
+                    } else {
                         child.Group[i].getOrder()[j] = -1; // Inherit null package from parent 2
                     }
                 }
@@ -281,7 +282,7 @@ public class GeneticAlgorithm
             solution.Group[randomRoute1].getOrder()[randomPos1] = solution.Group[randomRoute2].getOrder()[randomPos2];
             solution.Group[randomRoute2].getOrder()[randomPos2] = tempstorage;
         }
-            return solution;
+        return solution;
     }
 
     // CrossOver and Mutate: Combines swapMutation and Ordered Cross over using MutationRate

@@ -29,17 +29,20 @@ public class MasterAgent extends Agent
     private int step; // Represents stage of conversation with DA's
     private MasterAgent Master; // This Agent
     private int PopulationSize = 1000;
-    private int MutationRate = 10;
+    private int MutationRate = 4;
     private int Iterations = 1000;
 
     protected void setup()
     {
         Object[] args = getArguments();
-        if(args.length > 0)
+        if (args != null)
         {
-            PopulationSize = Integer.parseInt((String)args[0]);
-            MutationRate = Integer.parseInt((String)args[1]);
-            Iterations = Integer.parseInt((String)args[2]);
+            if (args.length > 0)
+            {
+                PopulationSize = Integer.parseInt((String) args[0]);
+                MutationRate = Integer.parseInt((String) args[1]);
+                Iterations = Integer.parseInt((String) args[2]);
+            }
         }
         step = 0;
         Master = this;

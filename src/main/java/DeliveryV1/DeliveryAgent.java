@@ -14,10 +14,13 @@ public class DeliveryAgent extends Agent {
     protected void setup()
     {
         Object[] args = getArguments();
-        if(args.length > 0)
+        if (args != null)
         {
-            Capacity = Integer.parseInt((String)args[0]);
-            MaxDistance = Integer.parseInt((String)args[1]);
+            if (args.length > 0)
+            {
+                Capacity = Integer.parseInt((String) args[0]);
+                MaxDistance = Integer.parseInt((String) args[1]);
+            }
         }
         route = new Route(new int[Capacity], 0, MaxDistance);
         // Create and show the GUI
